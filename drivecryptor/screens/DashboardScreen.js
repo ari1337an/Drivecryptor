@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from 'react-native'
+import { View, Text, Pressable, Image } from 'react-native'
 import React from 'react'
 
 // Redux
@@ -9,8 +9,18 @@ import { logout } from "../features/currentUserSlice";
 // Google Signin
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
+// Icons
+import { Bars3Icon, UserMinusIcon, FolderIcon } from "react-native-heroicons/solid";
+
+// Colors Theme
+import color_theme from "../color-theme";
+
+// Components
+import DashboardCardItem from "../components/DashboardCardItem";
+
 const DashboardScreen = ({ navigation }) => {
   const dispatch = useDispatch();
+  const currentUser = useSelector(store => store.currentUser.value)
 
   const Signout = async () => {
     try {
@@ -23,12 +33,32 @@ const DashboardScreen = ({ navigation }) => {
   }
 
   return (
-    <View classNam="flex-1 justify-center items-center">
-      <Text>DashboardScreen</Text>
-      <Pressable onPress={Signout} className="bg-flat_red1 px-4 py-3 rounded mt-5 flex-row space-x-2">
-        <Text className="text-white">Signout</Text>
-      </Pressable>
-    </View>
+    <>
+      <View className="flex-row items-center justify-between px-4 py-4 bg-flat_blue2 mb-2">
+        <Bars3Icon color="white" fill="white" size={35} />
+        <Text className="font-medium text-white text-2xl">DriveCryptor</Text>
+        <Image
+          className="h-8 w-8 rounded-full"
+          source={{
+            uri: currentUser?.user?.photo,
+          }}
+        />
+      </View>
+      <View>
+        <Pressable onPress={() => navigation.navigate("MyFilesScreen")}>
+          <DashboardCardItem title="My Files">
+            <FolderIcon color="white" fill={color_theme.flat_white1} size={35} />
+          </DashboardCardItem>
+        </Pressable>
+        <Pressable onPress={Signout}>
+          <DashboardCardItem title="Logout" >
+            <UserMinusIcon color="white" fill={color_theme.flat_white1} size={35} />
+          </DashboardCardItem>
+        </Pressable>
+
+      </View>
+    </>
+
   )
 }
 

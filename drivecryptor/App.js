@@ -7,6 +7,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 // Screens
 import LoginScreen from './screens/LoginScreen';
 import DashboardScreen from './screens/DashboardScreen';
+import MyFilesScreen from './screens/MyFilesScreen';
 
 // Redux 
 import store from './redux/store'
@@ -24,6 +25,7 @@ function App() {
         >
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
+          <Stack.Screen name="MyFilesScreen" component={MyFilesScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>
