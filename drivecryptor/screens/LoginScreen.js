@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { View, Text, Pressable, Alert, ActivityIndicator } from 'react-native'
 
 // Configs
@@ -12,7 +12,6 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 import { useDispatch } from "react-redux";
 import { useSelector } from 'react-redux';
 import { login } from "../features/currentUserSlice";
-
 
 // Icons
 import { LockClosedIcon } from "react-native-heroicons/solid";
@@ -28,27 +27,31 @@ GoogleSignin.configure({
 const LoginScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const currentUser = useSelector(store => store.currentUser.value)
-  const [loginStatus, setLoginStatus] = useState( Number(currentUser != null) ); // 0 => not logged in, 1 => logged, 2 => processing
+  const [loginStatus, setLoginStatus] = useState(0); // 0 => not logged in, 1 => logged, 2 => processing
 
-  // If Logged in, then redirect to Dashboard
+  // Check for current login status when user focuses on the screen
   useEffect(() => {
-    if(currentUser == null) setLoginStatus(0)
-    if(loginStatus === 1) navigation.navigate('DashboardScreen')
-  })
-  
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Current screen is focused
+      if (currentUser == null) setLoginStatus(0);
+      else setLoginStatus(1);
+    });
+    return unsubscribe;
+  }, [navigation])
 
   const SignIn = async () => {
     setLoginStatus(2);
     try {
       await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      
+      let userInfo = await GoogleSignin.signIn();
+
 
       //////////////////////////////////////////////
       console.log(userInfo); // TODO: remove this in future
+      delete userInfo.idToken; // TODO: Remove this in future if you need idToken too
       const token = userInfo; // TODO: change this later into some token/key/something 
       //////////////////////////////////////////////
-      
+
       dispatch(login(token));
       Alert.alert("Success!", `Signed in using ${userInfo.user.email}`)
       setLoginStatus(1);
@@ -68,20 +71,36 @@ const LoginScreen = ({ navigation }) => {
         color="black" fill="black" size={50}
       />
       <Text className="text-slate-600 text-3xl mt-5">Drivecryptor</Text>
-      <Text className="mt-10">Welcome, Guest!</Text>
+
       {
         loginStatus === 0 && (
-          <Pressable onPress={SignIn} className="bg-flat_darkgreen2 px-4 py-3 rounded mt-5 flex-row space-x-2">
-            <Text className="text-white">Signin using google</Text>
-          </Pressable>
+          <>
+            <Text className="mt-10">Welcome, Guest!</Text>
+            <Pressable onPress={SignIn} className="bg-flat_blue1 px-4 py-3 rounded mt-5 flex-row space-x-2">
+              <Text className="text-white">Signin using google</Text>
+            </Pressable>
+          </>
+        )
+      }
+      {
+        loginStatus === 1 && (
+          <>
+            <Text className="mt-10">Welcome back!</Text>
+            <Pressable onPress={() => navigation.navigate('DashboardScreen')} className="bg-flat_blue1 px-4 py-3 rounded mt-5 flex-row space-x-2">
+              <Text className="text-white">Go to Dashboard</Text>
+            </Pressable>
+          </>
         )
       }
       {
         loginStatus === 2 && (
-          <Pressable onPress={SignIn} className="bg-flat_darkgreen2 px-4 py-3 rounded mt-5 flex-row space-x-2">
-            <ActivityIndicator size="small" color={color_theme.flat_white1} />
-            <Text className="text-white">Signing in</Text>
-          </Pressable>
+          <>
+            <Text className="mt-10">Please wait!</Text>
+            <Pressable className="bg-flat_blue1 px-4 py-3 rounded mt-5 flex-row space-x-2">
+              <ActivityIndicator size="small" color={color_theme.flat_white1} />
+              <Text className="text-white">Signing in</Text>
+            </Pressable>
+          </>
         )
       }
     </View>
