@@ -10,13 +10,14 @@ import { logout } from "../features/currentUserSlice";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 // Icons
-import { Bars3Icon, UserMinusIcon, FolderIcon } from "react-native-heroicons/solid";
+import { UserMinusIcon, FolderIcon } from "react-native-heroicons/solid";
 
 // Colors Theme
 import color_theme from "../color-theme";
 
 // Components
 import DashboardCardItem from "../components/DashboardCardItem";
+import Header from '../components/Header';
 
 const DashboardScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -25,8 +26,8 @@ const DashboardScreen = ({ navigation }) => {
   const Signout = async () => {
     try {
       await GoogleSignin.signOut();
-      await dispatch(logout());
-      await navigation.navigate('LoginScreen')
+      dispatch(logout());
+      navigation.navigate('LoginScreen')
     } catch (error) {
       console.error(error);
     }
@@ -34,16 +35,7 @@ const DashboardScreen = ({ navigation }) => {
 
   return (
     <>
-      <View className="flex-row items-center justify-between px-4 py-4 bg-flat_blue2 mb-2">
-        <Bars3Icon color="white" fill="white" size={35} />
-        <Text className="font-medium text-white text-2xl">DriveCryptor</Text>
-        <Image
-          className="h-8 w-8 rounded-full"
-          source={{
-            uri: currentUser?.user?.photo,
-          }}
-        />
-      </View>
+      <Header title="Dashboard" onPress={() => navigation.goBack()}/>
       <View>
         <Pressable onPress={() => navigation.navigate("MyFilesScreen")}>
           <DashboardCardItem title="My Files">
@@ -55,7 +47,6 @@ const DashboardScreen = ({ navigation }) => {
             <UserMinusIcon color="white" fill={color_theme.flat_white1} size={35} />
           </DashboardCardItem>
         </Pressable>
-
       </View>
     </>
 
