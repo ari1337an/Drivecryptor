@@ -10,6 +10,7 @@ import { GDrive } from "@robinbobin/react-native-google-drive-api-wrapper";
 // Components
 import Header from '../components/Header';
 import FileListCard from '../components/FileListCard';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const MyFilesScreen = ({ navigation }) => {
   const [fileList, setFileList] = useState([]);
@@ -28,8 +29,10 @@ const MyFilesScreen = ({ navigation }) => {
 
       // Setup the GDrive instance
       const gdrive = new GDrive();
-      gdrive.accessToken = currentUser?.accessToken; // load the access token into the instance
-
+      const currentTokens = await GoogleSignin.getTokens();
+      gdrive.accessToken = currentTokens?.accessToken
+      // gdrive.accessToken = currentUser?.accessToken; // load the access token into the instance
+      
       // Using wrapper
       const allFilesOwnedByUsed = (await gdrive.files.list({
         q: "'root' in parents", // the "my-drive" folder only, without this all "shared" folders/files will get included
