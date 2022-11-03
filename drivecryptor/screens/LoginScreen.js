@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react'
-import { View, Text, Pressable, Alert, ActivityIndicator } from 'react-native'
+import { View, Text, Pressable, Alert, ActivityIndicator, Image } from 'react-native'
 
 // Configs
 import Config from "../config";
@@ -105,9 +105,13 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View className="flex-1 justify-center items-center">
-      <LockClosedIcon
-        color="black" fill="black" size={50}
+      <Image 
+         style={{width: '50%', height: 200,resizeMode : 'stretch' }}
+         source={require('../images/Google-Drive-w-padlock.png')}  
       />
+      {/*<LockClosedIcon
+        color="black" fill="black" size={50}
+      />*/}
       <Text className="text-slate-600 text-3xl mt-5">Drivecryptor</Text>
       {
         focusComplete === false && (
