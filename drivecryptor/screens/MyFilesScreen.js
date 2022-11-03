@@ -42,7 +42,7 @@ const MyFilesScreen = ({ navigation }) => {
       setFileList(allFilesOwnedByUsed)
 
       // The first file
-      console.log(allFilesOwnedByUsed[0]);
+      // console.log(allFilesOwnedByUsed[0]);
 
       setRefreshing(false)
     } catch (error) {

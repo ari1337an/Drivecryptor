@@ -35,7 +35,7 @@ const DashboardScreen = ({ navigation }) => {
 
   return (
     <>
-      <Header title="Dashboard" onPress={() => navigation.goBack()}/>
+      <Header title="Dashboard" onPress={() => navigation.goBack()} showGoBack={false}/>
       <View>
         <Pressable onPress={() => navigation.navigate("MyFilesScreen")}>
           <DashboardCardItem title="My Files">
