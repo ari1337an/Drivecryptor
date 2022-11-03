@@ -10,7 +10,7 @@ import { logout } from "../features/currentUserSlice";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 // Icons
-import { UserMinusIcon, FolderIcon } from "react-native-heroicons/solid";
+import { UserMinusIcon, FolderIcon, ArrowUpOnSquareStackIcon } from "react-native-heroicons/solid";
 
 // Colors Theme
 import color_theme from "../color-theme";
@@ -40,6 +40,11 @@ const DashboardScreen = ({ navigation }) => {
         <Pressable onPress={() => navigation.navigate("MyFilesScreen")}>
           <DashboardCardItem title="My Files">
             <FolderIcon color="white" fill={color_theme.flat_white1} size={35} />
+          </DashboardCardItem>
+        </Pressable>
+        <Pressable onPress={() => navigation.navigate("UploadFilesScreen")}>
+          <DashboardCardItem title="Upload Files">
+            <ArrowUpOnSquareStackIcon color="white" fill={color_theme.flat_white1} size={35} />
           </DashboardCardItem>
         </Pressable>
         <Pressable onPress={Signout}>
