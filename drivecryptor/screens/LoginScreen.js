@@ -10,6 +10,9 @@ import color_theme from "../color-theme";
 // Google Signin
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
+// Google Drive
+import { GDrive } from "@robinbobin/react-native-google-drive-api-wrapper";
+
 // Redux
 import { useDispatch } from "react-redux";
 import { useSelector } from 'react-redux';
@@ -23,7 +26,12 @@ GoogleSignin.configure({
   androidClientId: Config.GOOGLE_OAUTH_ANDROID_CLIENT_ID,
   webClientId: Config.GOOGLE_OAUTH_WEB_CLIENT_ID,
   offlineAccess: false,
-  scopes: ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/drive']
+  scopes: [
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/drive',
+      'https://www.googleapis.com/auth/drive.appdata',
+  ]
 });
 
 const LoginScreen = ({ navigation }) => {
@@ -102,6 +110,15 @@ const LoginScreen = ({ navigation }) => {
       setLoginStatus(0);
     }
   }
+
+  const hasPreviousAccount = async () => {
+    const gdrive = new GDrive();
+    const currentTokens = await GoogleSignin.getTokens();
+    gdrive.accessToken = currentTokens?.accessToken;
+
+    const res = await gdrive.files.list({spaces: 'appDataFolder'});
+    return res.files.length > 0;
+  };
 
   return (
     <View className="flex-1 justify-center items-center">
