@@ -1,5 +1,6 @@
 import { View, Text, Pressable, Image, Button } from 'react-native'
 import React from 'react'
+import { StackActions } from '@react-navigation/native';
 
 // Redux
 import { useDispatch } from "react-redux";
@@ -27,7 +28,7 @@ const DashboardScreen = ({ navigation }) => {
     try {
       await GoogleSignin.signOut();
       dispatch(logout());
-      navigation.navigate('LoginScreen')
+      navigation.dispatch(StackActions.popToTop());
     } catch (error) {
       console.error(error);
     }
@@ -37,12 +38,12 @@ const DashboardScreen = ({ navigation }) => {
     <>
       <Header title="Dashboard" onPress={() => navigation.goBack()} showGoBack={false}/>
       <View>
-        <Pressable onPress={() => navigation.navigate("MyFilesScreen")}>
+        <Pressable onPress={() => navigation.push("MyFilesScreen")}>
           <DashboardCardItem title="My Files">
             <FolderIcon color="white" fill={color_theme.flat_white1} size={35} />
           </DashboardCardItem>
         </Pressable>
-        <Pressable onPress={() => navigation.navigate("UploadFilesScreen")}>
+        <Pressable onPress={() => navigation.push("UploadFilesScreen")}>
           <DashboardCardItem title="Upload Files">
             <ArrowUpOnSquareStackIcon color="white" fill={color_theme.flat_white1} size={35} />
           </DashboardCardItem>
