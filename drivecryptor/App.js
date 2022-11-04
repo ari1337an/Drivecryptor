@@ -26,7 +26,7 @@ function App() {
         >
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
-          <Stack.Screen name="MyFilesScreen" component={MyFilesScreen} />
+          <Stack.Screen name="MyFilesScreen" component={MyFilesScreen} initialParams={{ folderID: "root" }}/>
           <Stack.Screen name="UploadFilesScreen" component={UploadFilesScreen} />
         </Stack.Navigator>
       </NavigationContainer>

@@ -1,49 +1,34 @@
 import { View, Text, Pressable, FlatList } from 'react-native'
 import React, { useEffect, useState } from 'react'
 
-// Redux
-import { useSelector } from 'react-redux';
-
 // Drive API Wrapper
-import { GDrive } from "@robinbobin/react-native-google-drive-api-wrapper";
+import { GDrive, ListQueryBuilder } from "@robinbobin/react-native-google-drive-api-wrapper";
 
 // Components
 import Header from '../components/Header';
 import FileListCard from '../components/FileListCard';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-const MyFilesScreen = ({ navigation }) => {
+const MyFilesScreen = ({ route, navigation }) => {
   const [fileList, setFileList] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentFolderID, setCurrentFolderID] = useState("root")
 
-  // Who is currently logged in
-  const currentUser = useSelector(store => store.currentUser.value)
-
-  const getListOfDriveFiles = async () => {
+  const getListOfDriveFiles = async (folderID=currentFolderID) => {
     setRefreshing(true)
     try {
-      // For manual Run: (Taken from Official API Ref: https://developers.google.com/drive/api/v3/reference/files/list)
-      // (API key not required, we need only access token that we got from oauth)
-      // GET https://www.googleapis.com/drive/v3/files?orderBy=folder%2C%20name&q=%27root%27%20in%20parents
-      // Header : [access_token] as authentication bearer
-
       // Setup the GDrive instance
       const gdrive = new GDrive();
       const currentTokens = await GoogleSignin.getTokens();
       gdrive.accessToken = currentTokens?.accessToken
-      // gdrive.accessToken = currentUser?.accessToken; // load the access token into the instance
-      
-      // Using wrapper
+
+      // Get All Files List that has "currentFolderID" as parents
       const allFilesOwnedByUsed = (await gdrive.files.list({
-        q: "'root' in parents", // the "my-drive" folder only, without this all "shared" folders/files will get included
+        q: new ListQueryBuilder().in(folderID, "parents").and().e("trashed",false), // the root 
         orderBy: 'folder,name', // folder first and name later 
       })).files
 
       setFileList(allFilesOwnedByUsed)
-
-      // The first file
-      // console.log(allFilesOwnedByUsed[0]);
-
       setRefreshing(false)
     } catch (error) {
       console.log(error);
@@ -51,18 +36,23 @@ const MyFilesScreen = ({ navigation }) => {
     }
   }
 
-  useEffect(()=>{
-    getListOfDriveFiles()
-  },[])
-
-
+  // Check for current login status when user focuses on the screen
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      const { folderID } = route.params; // get the folderID
+      setCurrentFolderID(folderID)
+      getListOfDriveFiles(folderID)
+    });
+    return unsubscribe;
+  }, [navigation])
 
   return (
     <>
       <Header title="My Files" onPress={() => navigation.goBack()}/>
       <FlatList
         data={fileList}
-        renderItem={FileListCard}
+        renderItem={(item) => <FileListCard navigation={navigation} item={item}/>}
+        // renderItem={FileListCard}
         keyExtractor={item => item.id} // given by google drive api itself
         onRefresh={getListOfDriveFiles}
         refreshing={refreshing}
