@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Image } from 'react-native'
+import { View, Text, Pressable, Image, Button } from 'react-native'
 import React from 'react'
 
 // Redux
@@ -10,7 +10,7 @@ import { logout } from "../features/currentUserSlice";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 // Icons
-import { UserMinusIcon, FolderIcon, ArrowUpOnSquareStackIcon } from "react-native-heroicons/solid";
+import { UserMinusIcon, FolderIcon, ArrowUpOnSquareStackIcon, CameraIcon } from "react-native-heroicons/solid";
 
 // Colors Theme
 import color_theme from "../color-theme";
@@ -52,6 +52,11 @@ const DashboardScreen = ({ navigation }) => {
             <UserMinusIcon color="white" fill={color_theme.flat_white1} size={35} />
           </DashboardCardItem>
         </Pressable>
+        <Pressable className="flex-row justify-end mr-10 mt-5" onPress={() => navigation.navigate("CameraScreen")}>
+            <View className="flex-row bg-flat_blue1 font-bold rounded-full px-5 py-5">
+              <CameraIcon color="white" fill={color_theme.flat_white1} size={35}/>
+            </View>
+          </Pressable>
       </View>
     </>
 

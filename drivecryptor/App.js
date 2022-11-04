@@ -9,6 +9,7 @@ import LoginScreen from './screens/LoginScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import MyFilesScreen from './screens/MyFilesScreen';
 import UploadFilesScreen from './screens/UploadFilesScreen';
+import CameraScreen from './screens/CameraScreen';
 
 // Redux 
 import store from './redux/store'
@@ -28,6 +29,7 @@ function App() {
           <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
           <Stack.Screen name="MyFilesScreen" component={MyFilesScreen} />
           <Stack.Screen name="UploadFilesScreen" component={UploadFilesScreen} />
+          <Stack.Screen name="CameraScreen" component={CameraScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>
