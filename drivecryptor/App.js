@@ -29,7 +29,7 @@ function App() {
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
           <Stack.Screen name="CameraScreen" component={CameraScreen} />
-          <Stack.Screen name="MyFilesScreen" component={MyFilesScreen} initialParams={{ folderID: "root" }}/>
+          <Stack.Screen name="MyFilesScreen" component={MyFilesScreen} initialParams={{ folderID: "root", folderName: "/" }}/>
           <Stack.Screen name="BrowseDirectoryScreen" component={BrowseDirectoryScreen} initialParams={{ folderID: "root", selectedFileInfo: null, folderName: "/" }}/>
           <Stack.Screen name="UploadFilesScreen" component={UploadFilesScreen} initialParams={{ uploadDirID: "root", uploadDirName: "/", uploadFileInfo: null }}/>
         </Stack.Navigator>

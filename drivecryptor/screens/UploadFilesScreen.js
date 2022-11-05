@@ -29,6 +29,7 @@ const UploadFilesScreen = ({ route, navigation }) => {
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       const { uploadDirID, uploadDirName, uploadFileInfo } = route.params; // get the folderID
+      console.log(route.params);
       setDirectoryID(uploadDirID)
       setDirectoryName(uploadDirName)
       setFilePickResult(uploadFileInfo)
@@ -150,7 +151,7 @@ const UploadFilesScreen = ({ route, navigation }) => {
           }
           {
             directoryName !== "root" && directoryName.length < 15 && (
-              <Text>directoryName</Text>
+              <Text>{directoryName}</Text>
             )
           }
           {

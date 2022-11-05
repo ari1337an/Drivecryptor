@@ -25,7 +25,8 @@ const FileListCard = ({item, navigation, redirectScreen="MyFilesScreen", selecte
           })
         }else if(redirectScreen === "MyFilesScreen"){
           navigation.push(redirectScreen, {
-            folderID: data.id
+            folderID: data.id,
+            folderName: data.name
           })
         }
         
