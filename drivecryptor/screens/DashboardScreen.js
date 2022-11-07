@@ -2,6 +2,9 @@ import { View, Text, Pressable, Image, Button } from 'react-native'
 import React from 'react'
 import { StackActions } from '@react-navigation/native';
 
+// RNFS
+import RNFS from "react-native-fs"
+
 // Redux
 import { useDispatch } from "react-redux";
 import { useSelector } from 'react-redux';
@@ -23,7 +26,7 @@ import Header from '../components/Header';
 const DashboardScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const currentUser = useSelector(store => store.currentUser.value)
-
+  
   const Signout = async () => {
     try {
       await GoogleSignin.signOut();

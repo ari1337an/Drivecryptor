@@ -29,7 +29,6 @@ const UploadFilesScreen = ({ route, navigation }) => {
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       const { uploadDirID, uploadDirName, uploadFileInfo } = route.params; // get the folderID
-      console.log(route.params);
       setDirectoryID(uploadDirID)
       setDirectoryName(uploadDirName)
       setFilePickResult(uploadFileInfo)
@@ -42,6 +41,7 @@ const UploadFilesScreen = ({ route, navigation }) => {
       let fileUri = (await DocumentPicker.pick({
         type: [types.doc, types.docx, types.pdf, types.images]
       }))
+      console.log(fileUri[0]);
       setFilePickResult(fileUri[0]);
     } catch (error) {
       console.log(error);
