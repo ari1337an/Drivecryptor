@@ -11,12 +11,15 @@ import color_theme from "../color-theme";
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 // Google Drive
-import { GDrive } from "@robinbobin/react-native-google-drive-api-wrapper";
+import { GDrive, ListQueryBuilder } from "@robinbobin/react-native-google-drive-api-wrapper";
 
 // Redux
 import { useDispatch } from "react-redux";
 import { useSelector } from 'react-redux';
 import { login } from "../features/currentUserSlice";
+
+// Buffer
+import { Buffer } from '@craftzdog/react-native-buffer';
 
 // Icons
 import { LockClosedIcon } from "react-native-heroicons/solid";
@@ -48,6 +51,32 @@ const LoginScreen = ({ navigation }) => {
       // Make manipulations
       delete userInfo.idToken; // For now, idToken is not required
       userInfo["accessToken"] = tokens?.accessToken; // populate the access_token once
+
+      const gdrive = new GDrive();
+      gdrive.accessToken = userInfo.accessToken;
+      const secondsToTimeOut = Config.GOOGLE_API_TIMEOUT_IN_SEC;
+      gdrive.fetchTimeout = 1000 * secondsToTimeOut;
+
+      // Check if `appDataFolder/index.json` exists
+      const searchRes = await gdrive.files.list({
+        spaces: 'appDataFolder',
+        q: new ListQueryBuilder().e('name', 'index.json'),
+      });
+
+      // Create `appDataFolder/index.json` if it doesn't exist
+      if (searchRes.files.length === 0) {
+        await gdrive.files
+          .newMultipartUploader()
+          .setRequestBody({name: 'index.json', parents: ['appDataFolder']})
+          .setData(
+            Buffer.from('[]').toString('base64'), // empty JSON array
+            MimeTypes.JSON_UTF8
+          )
+          .setIsBase64(true)
+          .execute();
+      } else {
+        console.log('appDataFolder/index.json already exists');
+      }
 
       // Push this to the redux as login state
       dispatch(login(userInfo));
