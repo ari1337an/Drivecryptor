@@ -8,6 +8,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from './screens/LoginScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import MyFilesScreen from './screens/MyFilesScreen';
+import BrowseDirectoryScreen from './screens/BrowseDirectoryScreen';
+import UploadFilesScreen from './screens/UploadFilesScreen';
+import CameraScreen from './screens/CameraScreen';
+import PDFViewScreen from './screens/PDFViewScreen';
 
 // Redux 
 import store from './redux/store'
@@ -25,7 +29,11 @@ function App() {
         >
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
-          <Stack.Screen name="MyFilesScreen" component={MyFilesScreen} />
+          <Stack.Screen name="CameraScreen" component={CameraScreen} />
+          <Stack.Screen name="MyFilesScreen" component={MyFilesScreen} initialParams={{ folderID: "root", folderName: "/" }}/>
+          <Stack.Screen name="BrowseDirectoryScreen" component={BrowseDirectoryScreen} initialParams={{ folderID: "root", selectedFileInfo: null, folderName: "/" }}/>
+          <Stack.Screen name="UploadFilesScreen" component={UploadFilesScreen} initialParams={{ uploadDirID: "root", uploadDirName: "/", uploadFileInfo: null }}/>
+          <Stack.Screen name="PDFViewScreen" component={PDFViewScreen} initialParams={{ filePath: null }}/>
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>
