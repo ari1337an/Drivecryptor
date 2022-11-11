@@ -2,16 +2,15 @@ import { View, Text, Pressable, FlatList, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Config from '../config';
 
-// Drive API Wrapper
-import { GDrive, ListQueryBuilder } from "@robinbobin/react-native-google-drive-api-wrapper";
-
 // Components
 import Header from '../components/Header';
 import FileListCard from '../components/FileListCard';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 // Icons
-import { ArrowUpTrayIcon, PlusIcon } from 'react-native-heroicons/solid';
+import { ArrowUpTrayIcon } from 'react-native-heroicons/solid';
+
+// Utils
+import GoogleDriveUtil from "../utils/GoogleDriveUtil"
 
 const MyFilesScreen = ({ route, navigation }) => {
   const [fileList, setFileList] = useState([]);
@@ -24,16 +23,10 @@ const MyFilesScreen = ({ route, navigation }) => {
     const secondsToTimeOut = Config.GOOGLE_API_TIMEOUT_IN_SEC; 
     try {
       // Setup the GDrive instance
-      const gdrive = new GDrive();
-      gdrive.fetchTimeout = 1000*secondsToTimeOut 
-      const currentTokens = await GoogleSignin.getTokens();
-      gdrive.accessToken = currentTokens?.accessToken
+      const gdrive = await GoogleDriveUtil.getInstance()
 
-      // Get All Files List that has "currentFolderID" as parents
-      const allFilesOwnedByUsed = (await gdrive.files.list({
-        q: new ListQueryBuilder().in(folderID, "parents").and().e("trashed",false), // the root 
-        orderBy: 'folder,name', // folder first and name later 
-      })).files
+      // Get All Files List that has "folderID" as parents
+      const allFilesOwnedByUsed = await GoogleDriveUtil.getFilesList(gdrive, folderID);
 
       setFileList(allFilesOwnedByUsed)
       setRefreshing(false)

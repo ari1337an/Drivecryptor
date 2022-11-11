@@ -1,14 +1,25 @@
 import { View, Text, Image } from 'react-native'
-import React from 'react'
-
-// Redux
-import { useSelector } from 'react-redux';
+import React, {useEffect, useState} from 'react'
 
 // Icons
 import { ArrowUturnLeftIcon } from 'react-native-heroicons/solid'
 
+// Goog
+import LoginUtils from '../utils/LoginUtils'
+
 const Header = ({title, onPress, showGoBack=true}) => {
-  const currentUser = useSelector(store => store.currentUser.value)
+  const [userPhoto, setUserPhoto] = useState(null)
+  useEffect(() => {
+    const setStates = async () => {
+      try {
+        let userInfo = await LoginUtils.getUserInfo()
+        setUserPhoto(userInfo.user.photo)
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    setStates()
+  }, [])
   return (
     <View className="flex-row items-center justify-between px-4 py-4 bg-flat_blue2 mb-2">
       {
@@ -17,12 +28,15 @@ const Header = ({title, onPress, showGoBack=true}) => {
         )
       }
       <Text className="font-medium text-white text-2xl">{title}</Text>
-      <Image
+      {
+        userPhoto != null && <Image
         className="h-8 w-8 rounded-full"
         source={{
-          uri: currentUser?.user?.photo,
+          uri: userPhoto,
         }}
       />
+      }
+      
     </View>
   )
 }

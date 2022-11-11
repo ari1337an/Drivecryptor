@@ -1,6 +1,5 @@
-import { View, Text, Pressable, Alert, PermissionsAndroid } from 'react-native'
+import { Text, Pressable, Alert, PermissionsAndroid } from 'react-native'
 import React from 'react'
-import Config from "../config"
 
 // Drive API Wrapper
 import { MimeTypes } from "@robinbobin/react-native-google-drive-api-wrapper";
@@ -11,19 +10,11 @@ import color_theme from "../color-theme";
 // Icons
 import { FolderIcon, DocumentIcon, DocumentTextIcon } from 'react-native-heroicons/solid';
 
-// Google Apis
-import { GDrive } from '@robinbobin/react-native-google-drive-api-wrapper';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-
-// File System
-import RNFS from "react-native-fs"
-import ReactNativeBlobUtil from "react-native-blob-util"
-import {encode} from 'base-64'
-import { Buffer } from '@craftzdog/react-native-buffer';
+// Utils
+import decryptionTaskUtil from '../utils/decryptionTaskUtil'
 
 const FileListCard = ({ item, navigation, redirectScreen = "MyFilesScreen", selectedFileToUpload = null }) => {
   const data = item.item
-  const secondsToTimeOut = Config.GOOGLE_API_TIMEOUT_IN_SEC;
 
   const requestReadWriteExternalPermission = async () => {
     const granted1 = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE);
@@ -36,7 +27,6 @@ const FileListCard = ({ item, navigation, redirectScreen = "MyFilesScreen", sele
   }
 
   const handleFilePress = async () => {
-    console.log(data.mimeType);
     try {
       if (data.mimeType === MimeTypes.FOLDER) {
         // Handle Folder Press
@@ -55,48 +45,13 @@ const FileListCard = ({ item, navigation, redirectScreen = "MyFilesScreen", sele
         }
 
       } else if (data.mimeType === MimeTypes.PDF) {
-
-        Alert.alert("Starting Download", "File has been queued for preview in background, feel free to do your work.")
-        // Setup the GDrive instance
-        const gdrive = new GDrive();
-        gdrive.fetchTimeout = 1000 * secondsToTimeOut
-        const currentTokens = await GoogleSignin.getTokens();
-        gdrive.accessToken = currentTokens?.accessToken
-
         // Request Permission
         await requestReadWriteExternalPermission()
-        let path = RNFS.ExternalCachesDirectoryPath;
 
+        // Prompt the user that we have started the background process
+        Alert.alert("Processing...", "File has been queued for processing.")
 
-        // Get the File Content
-        console.log("Downloading...");
-        let t0 = performance.now()
-        let fileContent = await gdrive.files.getBinary(data.id) // return an Uint8Array
-        let t1 = performance.now()
-        console.log("Downloading took " + (t1 - t0) + " milliseconds.")
-
-
-        // Convert Uint8Array to base64 encoding 
-        console.log("Encoding...");
-        t0 = performance.now();
-        let b64 = await Buffer.from(fileContent).toString('base64');
-        // console.log(b64);
-        t1 = performance.now();
-        console.log("Base64 Encoding took " + (t1 - t0) + " milliseconds.")
-
-        // Save file locally
-        console.log("Writting...");
-        t0 = performance.now();
-        await ReactNativeBlobUtil.fs.writeFile(path + "/temp.pdf", b64, 'base64')
-        t1 = performance.now();
-        console.log("File Writting took " + (t1 - t0) + " milliseconds.")
-
-        // Alert.alert("Success", "File has been written!");
-
-        // Let react-native-pdf handle it
-        navigation.push("PDFViewScreen", {
-          filePath: path + "/temp.pdf"
-        })
+        await decryptionTaskUtil.initiateBackgroundDecryptionTask(data, navigation);
       }
     } catch (error) {
       Alert.alert("Attention", error.message)

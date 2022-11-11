@@ -1,23 +1,18 @@
 import { View, Text, Pressable, Alert, ActivityIndicator } from 'react-native'
 import React, { useState, useEffect } from 'react'
 
+// Styles, Themes, Icons
+import color_theme from "../color-theme";
+import { ArrowUpTrayIcon, PaperClipIcon, XCircleIcon } from 'react-native-heroicons/solid'
+
 // Components
 import Header from '../components/Header';
 
 // Filer Picker
 import DocumentPicker, { types } from 'react-native-document-picker'
 
-// Styles, Themes, Icons, Config
-import Config from "../config"
-import color_theme from "../color-theme";
-import { ArrowUpTrayIcon, PaperClipIcon, PlusCircleIcon, XCircleIcon } from 'react-native-heroicons/solid'
-
-// File System
-import RNFS from "react-native-fs"
-
-// Google Apis
-import { GDrive } from '@robinbobin/react-native-google-drive-api-wrapper';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+// Utils
+import GoogleDriveUtil from "../utils/GoogleDriveUtil"
 
 const UploadFilesScreen = ({ route, navigation }) => {
   const [uploading, setUploading] = useState(false)
@@ -63,26 +58,12 @@ const UploadFilesScreen = ({ route, navigation }) => {
 
   const executeUpload = async () => {
     setUploading(true);
-    const secondsToTimeOut = Config.GOOGLE_API_TIMEOUT_IN_SEC; 
     try {
       // Setup the GDrive instance
-      const gdrive = new GDrive();
-      gdrive.fetchTimeout = 1000*secondsToTimeOut 
-      const currentTokens = await GoogleSignin.getTokens();
-      gdrive.accessToken = currentTokens?.accessToken
+      const gdrive = await GoogleDriveUtil.getInstance()
 
-      // Use Resumable Uploading in future 
-      // Using Multipart now
-      let fileContent = await RNFS.readFile(filePickResult.uri, 'base64');
-      await gdrive.files
-        .newMultipartUploader()
-        .setData(fileContent, filePickResult.type)
-        .setIsBase64(true)
-        .setRequestBody({
-          name: filePickResult?.name,
-          parents: [directoryID],
-        })
-        .execute()
+      // Upload File
+      await GoogleDriveUtil.fileUpload(gdrive, filePickResult.name, filePickResult.type, filePickResult.uri, directoryID )
 
       Alert.alert("Success","Successfully Uploaded!");
       setUploading(false);

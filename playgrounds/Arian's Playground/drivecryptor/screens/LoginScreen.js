@@ -1,10 +1,8 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { View, Text, Pressable, Alert, ActivityIndicator, Image } from 'react-native'
 
-// Configs
+// Config, Theme
 import Config from "../config";
-
-// Color Theme
 import color_theme from "../color-theme";
 
 // Google Signin
@@ -12,14 +10,6 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 
 // Google Drive
 import { GDrive } from "@robinbobin/react-native-google-drive-api-wrapper";
-
-// Redux
-import { useDispatch } from "react-redux";
-import { useSelector } from 'react-redux';
-import { login } from "../features/currentUserSlice";
-
-// Icons
-import { LockClosedIcon } from "react-native-heroicons/solid";
 
 // Google Signin Configurations
 GoogleSignin.configure({
@@ -35,8 +25,6 @@ GoogleSignin.configure({
 });
 
 const LoginScreen = ({ navigation }) => {
-  const dispatch = useDispatch();
-  const currentUser = useSelector(store => store.currentUser.value)
   const [focusComplete, setFocusComplete] = useState(false); // 0 -> yet to run 'onScreenFocus', 1-> ran it.
   const [loginStatus, setLoginStatus] = useState(0); // 0 => not logged in, 1 => logged, 2 => processing
 
@@ -49,8 +37,6 @@ const LoginScreen = ({ navigation }) => {
       delete userInfo.idToken; // For now, idToken is not required
       userInfo["accessToken"] = tokens?.accessToken; // populate the access_token once
 
-      // Push this to the redux as login state
-      dispatch(login(userInfo));
     } catch (error) {
       console.log(error);
     }
@@ -70,12 +56,7 @@ const LoginScreen = ({ navigation }) => {
         setLoginStatus(1)
         setFocusComplete(true);
         navigation.navigate('DashboardScreen')
-      } else if (currentUser != null) {
-        setLoginStatus(1);
-        setFocusComplete(true);
-        navigation.navigate('DashboardScreen')
-      }
-      else {
+      }else {
         setLoginStatus(0);
         setFocusComplete(true);
       }
@@ -91,7 +72,7 @@ const LoginScreen = ({ navigation }) => {
       onScreenFocus();
     });
     return unsubscribe;
-  }, [navigation, currentUser])
+  }, [navigation])
 
   const SignIn = async () => {
     setLoginStatus(2);
