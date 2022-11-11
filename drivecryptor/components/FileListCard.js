@@ -18,7 +18,8 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 // File System
 import RNFS from "react-native-fs"
 import ReactNativeBlobUtil from "react-native-blob-util"
-import * as cppBase64 from 'react-native-quick-base64'
+import {encode} from 'base-64'
+import { Buffer } from '@craftzdog/react-native-buffer';
 
 const FileListCard = ({ item, navigation, redirectScreen = "MyFilesScreen", selectedFileToUpload = null }) => {
   const data = item.item
@@ -78,7 +79,8 @@ const FileListCard = ({ item, navigation, redirectScreen = "MyFilesScreen", sele
         // Convert Uint8Array to base64 encoding 
         console.log("Encoding...");
         t0 = performance.now();
-        let b64 = await cppBase64.fromByteArray(fileContent)
+        let b64 = await Buffer.from(fileContent).toString('base64');
+        // console.log(b64);
         t1 = performance.now();
         console.log("Base64 Encoding took " + (t1 - t0) + " milliseconds.")
 

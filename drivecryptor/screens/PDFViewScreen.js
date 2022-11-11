@@ -8,7 +8,7 @@ import { GDrive } from '@robinbobin/react-native-google-drive-api-wrapper';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 // File System
-import * as cppBase64 from 'react-native-quick-base64'
+import {encode} from 'base-64'
 import Pdf from 'react-native-pdf';
 
 // Components
