@@ -4,7 +4,6 @@ import { MimeTypes } from "@robinbobin/react-native-google-drive-api-wrapper";
 import color_theme from "../color-theme";
 import { FolderIcon, DocumentIcon, DocumentTextIcon, ArrowPathIcon, EyeIcon } from 'react-native-heroicons/solid';
 import RNFS from "react-native-fs"
-import BackgroundService from 'react-native-background-actions';
 import decryptionTaskUtil from '../utils/decryptionTaskUtil'
 
 const TaskListCard = ({ item, navigation }) => {

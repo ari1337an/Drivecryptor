@@ -7,9 +7,10 @@ import color_theme from "../color-theme";
 
 // Google Signin
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import GoogleDriveUtil from "../utils/GoogleDriveUtil"
 
 // Google Drive
-import { GDrive } from "@robinbobin/react-native-google-drive-api-wrapper";
+import { GDrive, MimeTypes } from "@robinbobin/react-native-google-drive-api-wrapper";
 
 // Google Signin Configurations
 GoogleSignin.configure({
@@ -17,10 +18,10 @@ GoogleSignin.configure({
   webClientId: Config.GOOGLE_OAUTH_WEB_CLIENT_ID,
   offlineAccess: false,
   scopes: [
-      'https://www.googleapis.com/auth/userinfo.email',
-      'https://www.googleapis.com/auth/userinfo.profile',
-      'https://www.googleapis.com/auth/drive',
-      'https://www.googleapis.com/auth/drive.appdata',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/drive',
+    'https://www.googleapis.com/auth/drive.appdata',
   ]
 });
 
@@ -43,7 +44,7 @@ const LoginScreen = ({ navigation }) => {
   }
 
   const onScreenFocus = async () => {
-    setFocusComplete(false); 
+    setFocusComplete(false);
     // Current screen is focused
     try {
       // Check if User is already signed in
@@ -56,7 +57,7 @@ const LoginScreen = ({ navigation }) => {
         setLoginStatus(1)
         setFocusComplete(true);
         navigation.navigate('DashboardScreen')
-      }else {
+      } else {
         setLoginStatus(0);
         setFocusComplete(true);
       }
@@ -79,8 +80,14 @@ const LoginScreen = ({ navigation }) => {
     try {
       await GoogleSignin.hasPlayServices();
       let userInfo = await GoogleSignin.signIn();
+      let token = await GoogleSignin.getTokens()
       handleSigninUserInfo(userInfo)
       setLoginStatus(1);
+
+      // Create config.json in appdata space If Not Already Created
+      const gdrive = await GoogleDriveUtil.getInstanceFromToken(token.accessToken)
+      await GoogleDriveUtil.createConfigFileIfNotExists(gdrive)
+
       Alert.alert("Success!", `Signed in using ${userInfo.user.email}`)
       navigation.navigate('DashboardScreen')
     } catch (error) {
@@ -97,15 +104,15 @@ const LoginScreen = ({ navigation }) => {
     const currentTokens = await GoogleSignin.getTokens();
     gdrive.accessToken = currentTokens?.accessToken;
 
-    const res = await gdrive.files.list({spaces: 'appDataFolder'});
+    const res = await gdrive.files.list({ spaces: 'appDataFolder' });
     return res.files.length > 0;
   };
 
   return (
     <View className="flex-1 justify-center items-center">
-      <Image 
-         style={{width: '50%', height: 200,resizeMode : 'stretch' }}
-         source={require('../images/Google-Drive-w-padlock.png')}  
+      <Image
+        style={{ width: '50%', height: 200, resizeMode: 'stretch' }}
+        source={require('../images/Google-Drive-w-padlock.png')}
       />
       {/*<LockClosedIcon
         color="black" fill="black" size={50}

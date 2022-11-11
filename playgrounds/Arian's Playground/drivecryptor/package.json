@@ -19,6 +19,7 @@
     "@react-navigation/native": "^6.0.13",
     "@react-navigation/native-stack": "^6.9.1",
     "@robinbobin/react-native-google-drive-api-wrapper": "^1.2.3",
+    "crypto-js": "^4.1.1",
     "nativewind": "^2.0.11",
     "react": "18.1.0",
     "react-native": "0.70.4",

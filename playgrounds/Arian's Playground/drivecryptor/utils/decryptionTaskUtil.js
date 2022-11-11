@@ -7,6 +7,8 @@ import RNFS from "react-native-fs"
 import ReactNativeBlobUtil from "react-native-blob-util"
 import base64Encoder from "./base64Encoder"
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import 'react-native-get-random-values';
+import cryptoJs from "crypto-js";
 
 const path = RNFS.ExternalCachesDirectoryPath;
 
@@ -15,17 +17,28 @@ const logData = (uuid, message) => {
   console.log(`Process ${uuid}: ${message}`);
 }
 
-const downloadFileContent = async (uuid, fileID) => {
+const downloadFileContent = async (uuid, fileID, getBinary=false) => {
   // Setup the GDrive instance
   const gdrive = await GoogleDriveUtil.getInstance()
 
   // Get the File Content
   logData(uuid, "Downloading...");
   let t0 = performance.now()
-  let fileContent = await gdrive.files.getBinary(fileID) // return an Uint8Array
+  let fileContent = (getBinary === true) ? await gdrive.files.getBinary(fileID) : await gdrive.files.getText(fileID) 
   let t1 = performance.now()
   logData(uuid, "Downloading took " + (t1 - t0) + " milliseconds.");
   return fileContent
+}
+
+const decryptyFileContent = async (uuid, password, fileContent) => {
+  // Convert Uint8Array to base64 encoding 
+  logData(uuid, "Decrypting File Content...");
+  t0 = performance.now();
+  let content = await cryptoJs.AES.decrypt(fileContent, password);
+  content = content.toString(cryptoJs.enc.Utf8);
+  t1 = performance.now();
+  logData(uuid, "Decrypting took " + (t1 - t0) + " milliseconds.");
+  return content
 }
 
 const encodeFileContent = async (uuid, fileContent) => {
@@ -51,15 +64,25 @@ const writeFileContent = async (uuid, base64Content) => {
   return fullPathToFile;
 }
 
-// Decorator Pattern 
-// taskID has to be unique
-const startDecryptionTask = async (taskID, fileID, navigation) => {
+const decryptTaskText = async (content, password) => {
+  let bytes = await cryptoJs.AES.decrypt(content, password);
+  return bytes.toString(cryptoJs.enc.Utf8);
+}
+
+const startDownloadTask = async (taskID, fileID, navigation) => {
   try {
-    const savedTo = await writeFileContent(taskID, await encodeFileContent(taskID, await downloadFileContent(taskID, fileID)))
-    
+    const password = "password-tmp";
+    const savedTo = await writeFileContent(
+      taskID,
+      await encodeFileContent(
+        taskID,
+        await downloadFileContent(taskID, fileID, true)
+      )
+    )
+
     let oldFileDetails = await AsyncStorage.getItem(taskID)
     oldFileDetails = await JSON.parse(oldFileDetails)
-    let newDetailsCompleted = {...oldFileDetails, status: "complete"}
+    let newDetailsCompleted = { ...oldFileDetails, status: "complete" }
     await AsyncStorage.setItem(taskID, JSON.stringify(newDetailsCompleted))
 
     // Notify User
@@ -75,32 +98,76 @@ const startDecryptionTask = async (taskID, fileID, navigation) => {
       body: 'Check your file from all queue list!',
       android: {
         channelId,
-        smallIcon: 'ic_launcher', 
+        smallIcon: 'ic_launcher',
         pressAction: {
           id: 'default'
         },
       },
     });
-    
+
   } catch (error) {
     console.log(error);
   }
 }
 
-const initiateBackgroundDecryptionTask = async (fileDetails, navigation, taskIDx=null) => {
+// Decorator Pattern 
+// taskID has to be unique
+const startDecryptionTask = async (taskID, fileID, navigation) => {
   try {
-    console.log("hix");
+    const password = "password-tmp";
+    const savedTo = await writeFileContent(
+      taskID,
+      await decryptyFileContent(
+        taskID,
+        password,
+        await downloadFileContent(taskID, fileID)
+      )
+    )
+
+    let oldFileDetails = await AsyncStorage.getItem(taskID)
+    oldFileDetails = await JSON.parse(oldFileDetails)
+    let newDetailsCompleted = { ...oldFileDetails, status: "complete" }
+    await AsyncStorage.setItem(taskID, JSON.stringify(newDetailsCompleted))
+
+    // Notify User
+    // Create a channel (required for Android)
+    const channelId = await notifee.createChannel({
+      id: 'default',
+      name: 'Default Channel',
+    });
+
+    // Display a notification
+    await notifee.displayNotification({
+      title: 'Your request is ready.',
+      body: 'Check your file from all queue list!',
+      android: {
+        channelId,
+        smallIcon: 'ic_launcher',
+        pressAction: {
+          id: 'default'
+        },
+      },
+    });
+
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+const initiateBackgroundDecryptionTask = async (fileDetails, navigation, taskIDx = null) => {
+  try {
     // Brand new taskID to keep track
     let taskID = taskIDx
-    if(taskID == null) taskID = uuidv4()
+    if (taskID == null) taskID = uuidv4()
 
     // Push this into queue
-    let newDetails = {...fileDetails, status: "processing"}
+    let newDetails = { ...fileDetails, status: "processing" }
     await AsyncStorage.setItem(taskID, JSON.stringify(newDetails))
 
     const veryIntensiveTask = async (taskDataArguments) => {
       await new Promise(async (resolve) => {
-        await startDecryptionTask(taskID, fileDetails.id, navigation);
+        if(fileDetails.isEncrypted === true) await startDecryptionTask(taskID, fileDetails.id, navigation);
+        else await startDownloadTask(taskID, fileDetails.id, navigation);
         resolve(true)
       });
     };
@@ -119,7 +186,7 @@ const initiateBackgroundDecryptionTask = async (fileDetails, navigation, taskIDx
         delay: 1000,
       },
     };
-    
+
     await BackgroundService.start(veryIntensiveTask, options);
     // await BackgroundService.stop();
   } catch (error) {
@@ -128,7 +195,8 @@ const initiateBackgroundDecryptionTask = async (fileDetails, navigation, taskIDx
 }
 
 const exports = {
-  initiateBackgroundDecryptionTask
+  initiateBackgroundDecryptionTask,
+  decryptTaskText
 }
 
 export default exports
