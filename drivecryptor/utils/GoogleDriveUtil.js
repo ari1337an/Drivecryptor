@@ -5,7 +5,7 @@ import Config from '../config';
 import {
   GDrive,
   ListQueryBuilder,
-  MimeTypes
+  MimeTypes,
 } from '@robinbobin/react-native-google-drive-api-wrapper';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import 'react-native-get-random-values';
@@ -150,6 +150,48 @@ const addElementInConfig = async (instance, value) => {
   // await instance.delete(oldConfigFileID)
 };
 
+const RefPicExists = async instance => {
+  let allFileInAppData = await getFileListInAppData(instance);
+  let found = false;
+  for (const file of allFileInAppData) {
+    console.log(file);
+    if (file.mimeType === "image/jpeg" && file.name === 'refPic') {
+      found = true;
+      console.log('Found refPic, id: ', file.id);
+    }
+  }
+  return found;
+};
+
+const getRefPicFileID = async instance => {
+  let allFileInAppData = await getFileListInAppData(instance);
+  for (const file of allFileInAppData) {
+    console.log(file);
+    if (file.mimeType === "image/jpeg" && file.name === 'refPic') {
+      return file.id;
+    }
+  }
+};
+
+const uploadRefPicToAppDataFolder = async (instance, filePath) => {
+  if (RefPicExists(instance) === true) {
+    console.log('Found a refPic, not updating the old file!');
+  } else {
+    console.log("Couldn't find old refPic, so, uploading new one.");
+    let fileContent = await RNFS.readFile(filePath, 'base64');
+    let details = await instance.files
+      .newMultipartUploader()
+      .setData(fileContent, 'image/jpeg')
+      .setIsBase64(true)
+      .setRequestBody({
+        name: 'refPic',
+        parents: ['appDataFolder'],
+      })
+      .execute();
+    console.log('refPic upload done, file id', details.id);
+  }
+};
+
 const exports = {
   getInstance,
   getFilesList,
@@ -159,6 +201,9 @@ const exports = {
   createConfigFileIfNotExists,
   getConfigFileObject,
   addElementInConfig,
+  uploadRefPicToAppDataFolder,
+  RefPicExists,
+  getRefPicFileID,
 };
 
 export default exports;

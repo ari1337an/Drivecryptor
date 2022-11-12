@@ -1,4 +1,4 @@
-// Core 
+// Core
 import React, {useEffect, useState} from 'react';
 import {
   View,
@@ -21,9 +21,7 @@ import {
 import GoogleDriveUtil from '../utils/GoogleDriveUtil';
 
 // Google Drive
-import {
-  GDrive,
-} from '@robinbobin/react-native-google-drive-api-wrapper';
+import {GDrive} from '@robinbobin/react-native-google-drive-api-wrapper';
 
 // Google Signin Configurations
 GoogleSignin.configure({
@@ -103,7 +101,16 @@ const LoginScreen = ({navigation}) => {
       );
       await GoogleDriveUtil.createConfigFileIfNotExists(gdrive);
 
-      Alert.alert('Success!', `Signed in using ${userInfo.user.email}`);
+      const refPicExists = await GoogleDriveUtil.RefPicExists(gdrive);
+      console.log(refPicExists);
+      if (refPicExists === true) {
+        Alert.alert('Success!', `Signed in using ${userInfo.user.email}`);
+        navigation.navigate('DashboardScreen');
+      } else {
+        console.log('No refPic found!');
+        navigation.navigate('CameraScreen');
+      }
+
       navigation.navigate('DashboardScreen');
     } catch (error) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED)
@@ -157,11 +164,13 @@ const LoginScreen = ({navigation}) => {
           )}
           {loginStatus === 1 && (
             <>
-              <Text className="mt-10">Welcome back!</Text>
-              <Pressable
-                onPress={() => navigation.navigate('DashboardScreen')}
-                className="bg-flat_blue1 px-4 py-3 rounded mt-5 flex-row space-x-2">
-                <Text className="text-white">Go to Dashboard</Text>
+              <Text className="mt-10">Please wait!</Text>
+              <Pressable className="bg-flat_blue1 px-4 py-3 rounded mt-5 flex-row space-x-2">
+                <ActivityIndicator
+                  size="small"
+                  color={color_theme.flat_white1}
+                />
+                <Text className="text-white">Please wait</Text>
               </Pressable>
             </>
           )}
