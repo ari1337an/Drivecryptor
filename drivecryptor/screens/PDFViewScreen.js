@@ -1,14 +1,8 @@
 import { View, Text, ActivityIndicator } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import Config from '../config';
 import color_theme from "../color-theme"
 
-// Google Apis
-import { GDrive } from '@robinbobin/react-native-google-drive-api-wrapper';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-
-// File System
-import {encode} from 'base-64'
+// PDF Viewer
 import Pdf from 'react-native-pdf';
 
 // Components
@@ -17,27 +11,6 @@ import Header from '../components/Header';
 const PDFViewScreen = ({ navigation, route }) => {
   const [filePathPDF, setFilePathPDF] = useState(null)
   const [loading, setLoading] = useState(true);
-  // const [fileContent, setFileContent] = useState(null);
-  // const [status, setStatus] = useState("Downloading");
-
-  // const fetchFileContent = async (fileID) => {
-  //   try {
-  //     // Setup GDrive
-  //     const gdrive = new GDrive();
-  //     gdrive.fetchTimeout = 1000 * Config.GOOGLE_API_TIMEOUT_IN_SEC
-  //     const currentTokens = await GoogleSignin.getTokens();
-  //     gdrive.accessToken = currentTokens?.accessToken
-
-  //     let fileContentUint8Arr
-  //     fileContentUint8Arr = await gdrive.files.getBinary(fileID) // returns an Uint8Array
-  //     fileContentUint8Arr = cppBase64.fromByteArray(fileContentUint8Arr)
-  //     fileContentUint8Arr = "data:application/pdf;base64," + fileContentUint8Arr
-  //     setFileContent({ uri: fileContentUint8Arr })
-  //     setLoading(false);
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }
 
   // onFocus of current screen
   useEffect(() => {
@@ -46,7 +19,6 @@ const PDFViewScreen = ({ navigation, route }) => {
       setFilePathPDF({uri: "file://"+filePath})
       console.log({uri: "file://"+filePath});
       setLoading(false);
-      // fetchFileContent(fileID)
     });
     return unsubscribe;
   }, [navigation])

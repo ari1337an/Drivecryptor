@@ -1,28 +1,16 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { View, Text, Pressable, Alert, ActivityIndicator, Image } from 'react-native'
 
-// Configs
+// Config, Theme
 import Config from "../config";
-
-// Color Theme
 import color_theme from "../color-theme";
 
 // Google Signin
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import GoogleDriveUtil from "../utils/GoogleDriveUtil"
 
 // Google Drive
-import { GDrive, ListQueryBuilder } from "@robinbobin/react-native-google-drive-api-wrapper";
-
-// Redux
-import { useDispatch } from "react-redux";
-import { useSelector } from 'react-redux';
-import { login } from "../features/currentUserSlice";
-
-// Buffer
-import { Buffer } from '@craftzdog/react-native-buffer';
-
-// Icons
-import { LockClosedIcon } from "react-native-heroicons/solid";
+import { GDrive, MimeTypes } from "@robinbobin/react-native-google-drive-api-wrapper";
 
 // Google Signin Configurations
 GoogleSignin.configure({
@@ -30,16 +18,14 @@ GoogleSignin.configure({
   webClientId: Config.GOOGLE_OAUTH_WEB_CLIENT_ID,
   offlineAccess: false,
   scopes: [
-      'https://www.googleapis.com/auth/userinfo.email',
-      'https://www.googleapis.com/auth/userinfo.profile',
-      'https://www.googleapis.com/auth/drive',
-      'https://www.googleapis.com/auth/drive.appdata',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/drive',
+    'https://www.googleapis.com/auth/drive.appdata',
   ]
 });
 
 const LoginScreen = ({ navigation }) => {
-  const dispatch = useDispatch();
-  const currentUser = useSelector(store => store.currentUser.value)
   const [focusComplete, setFocusComplete] = useState(false); // 0 -> yet to run 'onScreenFocus', 1-> ran it.
   const [loginStatus, setLoginStatus] = useState(0); // 0 => not logged in, 1 => logged, 2 => processing
 
@@ -52,41 +38,13 @@ const LoginScreen = ({ navigation }) => {
       delete userInfo.idToken; // For now, idToken is not required
       userInfo["accessToken"] = tokens?.accessToken; // populate the access_token once
 
-      const gdrive = new GDrive();
-      gdrive.accessToken = userInfo.accessToken;
-      const secondsToTimeOut = Config.GOOGLE_API_TIMEOUT_IN_SEC;
-      gdrive.fetchTimeout = 1000 * secondsToTimeOut;
-
-      // Check if `appDataFolder/index.json` exists
-      const searchRes = await gdrive.files.list({
-        spaces: 'appDataFolder',
-        q: new ListQueryBuilder().e('name', 'index.json'),
-      });
-
-      // Create `appDataFolder/index.json` if it doesn't exist
-      if (searchRes.files.length === 0) {
-        await gdrive.files
-          .newMultipartUploader()
-          .setRequestBody({name: 'index.json', parents: ['appDataFolder']})
-          .setData(
-            Buffer.from('[]').toString('base64'), // empty JSON array
-            MimeTypes.JSON_UTF8
-          )
-          .setIsBase64(true)
-          .execute();
-      } else {
-        console.log('appDataFolder/index.json already exists');
-      }
-
-      // Push this to the redux as login state
-      dispatch(login(userInfo));
     } catch (error) {
       console.log(error);
     }
   }
 
   const onScreenFocus = async () => {
-    setFocusComplete(false); 
+    setFocusComplete(false);
     // Current screen is focused
     try {
       // Check if User is already signed in
@@ -99,12 +57,7 @@ const LoginScreen = ({ navigation }) => {
         setLoginStatus(1)
         setFocusComplete(true);
         navigation.navigate('DashboardScreen')
-      } else if (currentUser != null) {
-        setLoginStatus(1);
-        setFocusComplete(true);
-        navigation.navigate('DashboardScreen')
-      }
-      else {
+      } else {
         setLoginStatus(0);
         setFocusComplete(true);
       }
@@ -120,15 +73,21 @@ const LoginScreen = ({ navigation }) => {
       onScreenFocus();
     });
     return unsubscribe;
-  }, [navigation, currentUser])
+  }, [navigation])
 
   const SignIn = async () => {
     setLoginStatus(2);
     try {
       await GoogleSignin.hasPlayServices();
       let userInfo = await GoogleSignin.signIn();
+      let token = await GoogleSignin.getTokens()
       handleSigninUserInfo(userInfo)
       setLoginStatus(1);
+
+      // Create config.json in appdata space If Not Already Created
+      const gdrive = await GoogleDriveUtil.getInstanceFromToken(token.accessToken)
+      await GoogleDriveUtil.createConfigFileIfNotExists(gdrive)
+
       Alert.alert("Success!", `Signed in using ${userInfo.user.email}`)
       navigation.navigate('DashboardScreen')
     } catch (error) {
@@ -145,15 +104,15 @@ const LoginScreen = ({ navigation }) => {
     const currentTokens = await GoogleSignin.getTokens();
     gdrive.accessToken = currentTokens?.accessToken;
 
-    const res = await gdrive.files.list({spaces: 'appDataFolder'});
+    const res = await gdrive.files.list({ spaces: 'appDataFolder' });
     return res.files.length > 0;
   };
 
   return (
     <View className="flex-1 justify-center items-center">
-      <Image 
-         style={{width: '50%', height: 200,resizeMode : 'stretch' }}
-         source={require('../images/Google-Drive-w-padlock.png')}  
+      <Image
+        style={{ width: '50%', height: 200, resizeMode: 'stretch' }}
+        source={require('../images/Google-Drive-w-padlock.png')}
       />
       {/*<LockClosedIcon
         color="black" fill="black" size={50}
