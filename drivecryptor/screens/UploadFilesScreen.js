@@ -77,6 +77,7 @@ const UploadFilesScreen = ({route, navigation}) => {
       );
 
       Alert.alert('Success', 'Successfully Uploaded!');
+      navigation.push("DashboardScreen");
       setUploading(false);
     } catch (error) {
       if (error.message === 'Aborted') {

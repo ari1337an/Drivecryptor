@@ -48,7 +48,7 @@ const DashboardScreen = ({navigation}) => {
         </Pressable>
         <Pressable
           onPress={() => navigation.push('QueueTask')}>
-          <DashboardCardItem title="Preview Queue">
+          <DashboardCardItem title="Preview Tasks">
             <QueueListIcon
               color="white"
               fill={color_theme.flat_white1}

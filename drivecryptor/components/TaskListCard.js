@@ -22,8 +22,11 @@ import RNFS from 'react-native-fs';
 import decryptionTaskUtil from '../utils/decryptionTaskUtil';
 import mimeTypeData from '../utils/mimeTypeData'
 
-// const path = RNFS.CachesDirectoryPath;
-const path = RNFS.ExternalCachesDirectoryPath ;
+// File Viewer
+import FileViewer from "react-native-file-viewer";
+
+const path = RNFS.CachesDirectoryPath;
+// const path = RNFS.ExternalCachesDirectoryPath ;
 
 const TaskListCard = ({item, navigation}) => {
   let dataFull = item.item;
@@ -34,19 +37,18 @@ const TaskListCard = ({item, navigation}) => {
       if (data.status === 'complete') {
         if (mimeTypeData.isPdfFile(data.mimeType)) {
           // if this is pdf
-          navigation.push('PDFViewScreen', {
-            filePath: path + `/${dataFull[0]}.pdf`,
-          });
+          // navigation.push('PDFViewScreen', {
+          //   filePath: path + `/${dataFull[0]}.pdf`,
+          // });
+          FileViewer.open('file://' + path + `/${dataFull[0]}.${data.extension}`)
         }else if (mimeTypeData.isImageFile(data.mimeType)) {
-          // if this is pdf
-          navigation.push('ImageViewScreen', {
-            filePath: path + `/${dataFull[0]}.${data.extension}`,
-          });
+          // if this is image
+          // navigation.push('ImageViewScreen', {
+          //   filePath: path + `/${dataFull[0]}.${data.extension}`,
+          // });
+          FileViewer.open('file://' + path + `/${dataFull[0]}.${data.extension}`)
         }else if (mimeTypeData.isDocFile(data.mimeType)) {
-          // if this is pdf
-          navigation.push('DocViewScreen', {
-            filePath: path + `/${dataFull[0]}.${data.extension}`,
-          });
+          FileViewer.open('file://' + path + `/${dataFull[0]}.${data.extension}`)
         }
       } else if (data.status === 'processing') {
         // retry the process

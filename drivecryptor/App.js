@@ -12,9 +12,6 @@ import MyFilesScreen from './screens/MyFilesScreen';
 import BrowseDirectoryScreen from './screens/BrowseDirectoryScreen';
 import UploadFilesScreen from './screens/UploadFilesScreen';
 import CameraScreen from './screens/CameraScreen';
-import PDFViewScreen from './screens/PDFViewScreen';
-import ImageViewScreen from './screens/ImageViewScreen';
-import DocViewScreen from './screens/DocViewScreen';
 import QueueTask from './screens/QueueTask';
 
 // Notification Handler
@@ -68,7 +65,7 @@ function App() {
             uploadFileInfo: null,
           }}
         />
-        <Stack.Screen
+        {/* <Stack.Screen
           name="PDFViewScreen"
           component={PDFViewScreen}
           initialParams={{filePath: null}}
@@ -77,12 +74,7 @@ function App() {
           name="ImageViewScreen"
           component={ImageViewScreen}
           initialParams={{filePath: null}}
-        />
-        <Stack.Screen
-          name="DocViewScreen"
-          component={DocViewScreen}
-          initialParams={{filePath: null}}
-        />
+        /> */}
       </Stack.Navigator>
     </NavigationContainer>
   );

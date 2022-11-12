@@ -64,7 +64,7 @@ const FileListCard = ({
         }
       } else if (mimeTypeData.isSupportedForPreview(data.mimeType)) {
         // Request Permission
-        await requestReadWriteExternalPermission();
+        // await requestReadWriteExternalPermission();
 
         // Prompt the user that we have started the background process
         Alert.alert('Processing...', 'File has been queued for processing.');

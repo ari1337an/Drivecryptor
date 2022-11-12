@@ -16,8 +16,8 @@ import RNFS from 'react-native-fs';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// const path = RNFS.CachesDirectoryPath ;
-const path = RNFS.ExternalCachesDirectoryPath;
+const path = RNFS.CachesDirectoryPath ;
+// const path = RNFS.ExternalCachesDirectoryPath;
 
 const logData = (uuid, message) => {
   console.log(`Process ${uuid}: ${message}`);
