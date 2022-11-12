@@ -10,6 +10,7 @@ import {
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import 'react-native-get-random-values';
 import cryptoJs from 'crypto-js';
+import LoginUtils from "./LoginUtils"
 
 // File System
 import RNFS from 'react-native-fs';
@@ -155,7 +156,7 @@ const RefPicExists = async instance => {
   let found = false;
   for (const file of allFileInAppData) {
     console.log(file);
-    if (file.mimeType === "image/jpeg" && file.name === 'refPic') {
+    if (file.mimeType === 'image/jpeg' && file.name === 'refPic') {
       found = true;
       console.log('Found refPic, id: ', file.id);
     }
@@ -167,7 +168,7 @@ const getRefPicFileID = async instance => {
   let allFileInAppData = await getFileListInAppData(instance);
   for (const file of allFileInAppData) {
     console.log(file);
-    if (file.mimeType === "image/jpeg" && file.name === 'refPic') {
+    if (file.mimeType === 'image/jpeg' && file.name === 'refPic') {
       return file.id;
     }
   }
@@ -192,6 +193,19 @@ const uploadRefPicToAppDataFolder = async (instance, filePath) => {
   }
 };
 
+const resetAppData = async (navigation = null) => {
+  try {
+    let instance = await getInstance()
+    let allFileInAppData = await getFileListInAppData(instance);
+    for (const file of allFileInAppData) {
+      await instance.files.delete(file.id)
+    }
+    await LoginUtils.Signout(navigation);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 const exports = {
   getInstance,
   getFilesList,
@@ -204,6 +218,7 @@ const exports = {
   uploadRefPicToAppDataFolder,
   RefPicExists,
   getRefPicFileID,
+  resetAppData,
 };
 
 export default exports;

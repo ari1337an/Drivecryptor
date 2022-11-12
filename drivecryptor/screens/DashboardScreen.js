@@ -1,6 +1,6 @@
-// Core 
+// Core
 import {View, Pressable, Linking} from 'react-native';
-import React,{useEffect} from 'react';
+import React, {useEffect} from 'react';
 
 // Themes, Icons
 import color_theme from '../color-theme';
@@ -21,7 +21,6 @@ import LoginUtils from '../utils/LoginUtils';
 import GoogleDriveUtil from '../utils/GoogleDriveUtil';
 
 const DashboardScreen = ({navigation}) => {
-
   // onFocus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', async () => {
@@ -29,7 +28,7 @@ const DashboardScreen = ({navigation}) => {
         let gdrive = await GoogleDriveUtil.getInstance();
         let refPicExists = await GoogleDriveUtil.RefPicExists(gdrive);
         if (refPicExists === false) {
-          navigation.navigate("CameraScreen");
+          navigation.navigate('CameraScreen');
         }
       } catch (error) {
         console.log(error);
@@ -37,7 +36,6 @@ const DashboardScreen = ({navigation}) => {
     });
     return unsubscribe;
   }, [navigation]);
-
 
   return (
     <>
@@ -65,10 +63,18 @@ const DashboardScreen = ({navigation}) => {
             />
           </DashboardCardItem>
         </Pressable>
-        <Pressable
-          onPress={() => navigation.push('QueueTask')}>
+        <Pressable onPress={() => navigation.push('QueueTask')}>
           <DashboardCardItem title="Preview(s)">
             <QueueListIcon
+              color="white"
+              fill={color_theme.flat_white1}
+              size={35}
+            />
+          </DashboardCardItem>
+        </Pressable>
+        <Pressable onPress={() => GoogleDriveUtil.resetAppData(navigation)}>
+          <DashboardCardItem title="Reset AppData">
+            <UserMinusIcon
               color="white"
               fill={color_theme.flat_white1}
               size={35}
