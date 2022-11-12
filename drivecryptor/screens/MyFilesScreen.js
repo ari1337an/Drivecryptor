@@ -1,4 +1,4 @@
-// Core 
+// Core
 import {Pressable, FlatList, Alert} from 'react-native';
 import React, {useEffect, useState} from 'react';
 
@@ -15,6 +15,7 @@ import {ArrowUpTrayIcon} from 'react-native-heroicons/solid';
 // Utils
 import GoogleDriveUtil from '../utils/GoogleDriveUtil';
 import decryptionTaskUtil from '../utils/decryptionTaskUtil';
+import mimeTypeData from '../utils/mimeTypeData';
 
 // Google Drive API
 import {MimeTypes} from '@robinbobin/react-native-google-drive-api-wrapper';
@@ -55,23 +56,43 @@ const MyFilesScreen = ({route, navigation}) => {
                 'password-tmp',
               );
               // console.log("original name: ", originalName);
-              allFilesOwnedByUsed[key]['name'] = '[E]' + originalName;
+              allFilesOwnedByUsed[key]['name'] = '[Encrypted] ' + originalName;
               allFilesOwnedByUsed[key]['isEncrypted'] = true;
 
               // extract ext name
-              let extension = originalName.substr(
-                originalName.lastIndexOf('.') + 1,
-              );
-              if (extension.toLowerCase() === 'pdf') {
-                allFilesOwnedByUsed[key]['mimeType'] = MimeTypes.PDF;
-              }
+              let extension = originalName
+                .substr(originalName.lastIndexOf('.') + 1)
+                .toLowerCase();
+              allFilesOwnedByUsed[key]['extension'] = extension;
+              allFilesOwnedByUsed[key]['mimeType'] =
+                mimeTypeData.getMimeTypeFromExt(extension);
+              break;
             }
           }
+
+          if (
+            mimeTypeData.isSupportedForPreview(
+              allFilesOwnedByUsed[key]['mimeType'],
+            ) &&
+            allFilesOwnedByUsed[key]['isEncrypted'] === false
+          ) {
+            let extension = allFilesOwnedByUsed[key]['name']
+              .substr(allFilesOwnedByUsed[key]['name'].lastIndexOf('.') + 1)
+              .toLowerCase();
+            allFilesOwnedByUsed[key]['extension'] = extension;
+          }
+          // if (!allFilesOwnedByUsed[key]['isEncrypted']) {
+          //   let name = allFilesOwnedByUsed[key]['name'];
+          //   let extension = name
+          //     .substr(name.lastIndexOf('.') + 1)
+          //     .toLowerCase();
+          //   allFilesOwnedByUsed[key]['extension'] = extension;
+          // }
         }
       }
 
-      for (const file of allFilesOwnedByUsed) {
-      }
+      // console.log("After editing");
+      // console.log(allFilesOwnedByUsed);
 
       setFileList(allFilesOwnedByUsed);
       setRefreshing(false);

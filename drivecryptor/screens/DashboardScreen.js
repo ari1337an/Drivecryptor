@@ -47,12 +47,8 @@ const DashboardScreen = ({navigation}) => {
           </DashboardCardItem>
         </Pressable>
         <Pressable
-          onPress={() =>
-            Linking.openURL(
-              'drivecryptor://app/allqueue?key=category_parent_id',
-            )
-          }>
-          <DashboardCardItem title="All Task Queue">
+          onPress={() => navigation.push('QueueTask')}>
+          <DashboardCardItem title="Preview Queue">
             <QueueListIcon
               color="white"
               fill={color_theme.flat_white1}

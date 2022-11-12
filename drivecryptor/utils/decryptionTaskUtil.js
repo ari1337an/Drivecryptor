@@ -11,11 +11,12 @@ import cryptoJs from 'crypto-js';
 import BackgroundService from 'react-native-background-actions';
 import notifee from '@notifee/react-native';
 
-// File and Storage 
+// File and Storage
 import RNFS from 'react-native-fs';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// const path = RNFS.CachesDirectoryPath ;
 const path = RNFS.ExternalCachesDirectoryPath;
 
 const logData = (uuid, message) => {
@@ -60,8 +61,9 @@ const encodeFileContent = async (uuid, fileContent) => {
   return base64Conent;
 };
 
-const writeFileContent = async (uuid, base64Content) => {
-  const fullPathToFile = path + `/${uuid}.pdf`;
+const writeFileContent = async (uuid, extension, base64Content) => {
+  console.log(extension);
+  const fullPathToFile = path + `/${uuid}.${extension}`;
 
   // Save file locally
   logData(uuid, 'Writing File...');
@@ -81,11 +83,12 @@ const decryptTaskText = async (content, password) => {
   return bytes.toString(cryptoJs.enc.Utf8);
 };
 
-const startDownloadTask = async (taskID, fileID, navigation) => {
+const startDownloadTask = async (taskID, fileID, navigation,extension) => {
   try {
     const password = 'password-tmp';
     const savedTo = await writeFileContent(
       taskID,
+      extension,
       await encodeFileContent(
         taskID,
         await downloadFileContent(taskID, fileID, true),
@@ -123,11 +126,12 @@ const startDownloadTask = async (taskID, fileID, navigation) => {
 
 // Decorator Pattern
 // taskID has to be unique
-const startDecryptionTask = async (taskID, fileID, navigation) => {
+const startDecryptionTask = async (taskID, fileID, navigation, extension) => {
   try {
     const password = 'password-tmp';
     const savedTo = await writeFileContent(
       taskID,
+      extension,
       await decryptyFileContent(
         taskID,
         password,
@@ -181,8 +185,19 @@ const initiateBackgroundDecryptionTask = async (
     const veryIntensiveTask = async taskDataArguments => {
       await new Promise(async resolve => {
         if (fileDetails.isEncrypted === true)
-          await startDecryptionTask(taskID, fileDetails.id, navigation);
-        else await startDownloadTask(taskID, fileDetails.id, navigation);
+          await startDecryptionTask(
+            taskID,
+            fileDetails.id,
+            navigation,
+            fileDetails.extension,
+          );
+        else
+          await startDownloadTask(
+            taskID,
+            fileDetails.id,
+            navigation,
+            fileDetails.extension,
+          );
         resolve(true);
       });
     };

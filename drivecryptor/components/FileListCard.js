@@ -13,10 +13,12 @@ import {
   FolderIcon,
   DocumentIcon,
   DocumentTextIcon,
+  PhotoIcon,
 } from 'react-native-heroicons/solid';
 
 // Utils
 import decryptionTaskUtil from '../utils/decryptionTaskUtil';
+import mimeTypeData from '../utils/mimeTypeData';
 
 const FileListCard = ({
   item,
@@ -60,17 +62,16 @@ const FileListCard = ({
             folderName: data.name,
           });
         }
-      } else if (data.mimeType === MimeTypes.PDF) {
+      } else if (mimeTypeData.isSupportedForPreview(data.mimeType)) {
         // Request Permission
         await requestReadWriteExternalPermission();
 
         // Prompt the user that we have started the background process
         Alert.alert('Processing...', 'File has been queued for processing.');
 
-        await decryptionTaskUtil.initiateBackgroundDecryptionTask(
-          data,
-          navigation,
-        );
+        decryptionTaskUtil.initiateBackgroundDecryptionTask(data, navigation);
+
+        navigation.push('DashboardScreen');
       }
     } catch (error) {
       Alert.alert('Attention', error.message);
@@ -103,9 +104,17 @@ const FileListCard = ({
             size={28}
           />
         )}
+        {mimeTypeData.isImageFile(data.mimeType) && (
+          <PhotoIcon
+            color={color_theme.flat_gray2}
+            fill={color_theme.flat_gray2}
+            size={28}
+          />
+        )}
         {data.mimeType !== MimeTypes.FOLDER &&
           data.mimeType !== MimeTypes.PDF &&
-          data.mimeType !== MimeTypes.TEXT && (
+          data.mimeType !== MimeTypes.TEXT &&
+          !mimeTypeData.isImageFile(data.mimeType) && (
             <DocumentIcon
               color={color_theme.flat_gray2}
               fill={color_theme.flat_gray2}

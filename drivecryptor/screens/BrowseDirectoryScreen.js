@@ -7,6 +7,10 @@ import Config from '../config';
 
 // Utils
 import GoogleDriveUtil from '../utils/GoogleDriveUtil';
+import decryptionTaskUtil from '../utils/decryptionTaskUtil';
+
+// Google Drive API
+import {MimeTypes} from '@robinbobin/react-native-google-drive-api-wrapper';
 
 // Components
 import FileListCard from '../components/FileListCard';
@@ -29,10 +33,45 @@ const BrowseDirectoryScreen = ({route, navigation}) => {
       const gdrive = await GoogleDriveUtil.getInstance();
 
       // Get All Files List that has "folderID" as parents
-      const allFilesOwnedByUsed = await GoogleDriveUtil.getFilesList(
+      let allFilesOwnedByUsed = await GoogleDriveUtil.getFilesList(
         gdrive,
         folderID,
       );
+
+      let configObj = await GoogleDriveUtil.getConfigFileObject(gdrive);
+      console.log(configObj);
+
+      for (const key in allFilesOwnedByUsed) {
+        if (Object.hasOwnProperty.call(allFilesOwnedByUsed, key)) {
+          const file = allFilesOwnedByUsed[key];
+          allFilesOwnedByUsed[key]['isEncrypted'] = false;
+
+          for (const encrypteFileID of configObj) {
+            if (file.id === encrypteFileID) {
+              // console.log("found a encrypted file");
+              // console.log("encrypted name: ", file.name);
+              let originalName = await decryptionTaskUtil.decryptTaskText(
+                file.name,
+                'password-tmp',
+              );
+              // console.log("original name: ", originalName);
+              allFilesOwnedByUsed[key]['name'] = '[E]' + originalName;
+              allFilesOwnedByUsed[key]['isEncrypted'] = true;
+
+              // extract ext name
+              let extension = originalName.substr(
+                originalName.lastIndexOf('.') + 1,
+              );
+              if (extension.toLowerCase() === 'pdf') {
+                allFilesOwnedByUsed[key]['mimeType'] = MimeTypes.PDF;
+              }
+            }
+          }
+        }
+      }
+
+      for (const file of allFilesOwnedByUsed) {
+      }
 
       setFileList(allFilesOwnedByUsed);
       setRefreshing(false);

@@ -60,9 +60,7 @@ const fileUpload = async (
   const password = 'password-tmp';
   fileContent = await cryptoJs.AES.encrypt(fileContent, password).toString();
   let fileNameEnc;
-  if (fileType === MimeTypes.PDF) {
-    fileNameEnc = await cryptoJs.AES.encrypt(fileName, password).toString();
-  }
+  fileNameEnc = await cryptoJs.AES.encrypt(fileName, password).toString();
   let t1 = performance.now();
   logData('Encrypting took ' + (t1 - t0) + ' milliseconds.');
   ///////////////////////////////////////////////////////////

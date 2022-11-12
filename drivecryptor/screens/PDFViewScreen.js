@@ -8,9 +8,6 @@ import color_theme from '../color-theme';
 // PDF Viewer
 import Pdf from 'react-native-pdf';
 
-// Components
-import Header from '../components/Header';
-
 const PDFViewScreen = ({navigation, route}) => {
   const [filePathPDF, setFilePathPDF] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,7 +25,6 @@ const PDFViewScreen = ({navigation, route}) => {
 
   return (
     <>
-      <Header title="Preview" onPress={() => navigation.goBack()} />
       {loading && (
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color={color_theme.flat_blue1} />

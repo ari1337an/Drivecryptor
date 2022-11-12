@@ -20,6 +20,10 @@ import RNFS from 'react-native-fs';
 
 // Utils
 import decryptionTaskUtil from '../utils/decryptionTaskUtil';
+import mimeTypeData from '../utils/mimeTypeData'
+
+// const path = RNFS.CachesDirectoryPath;
+const path = RNFS.ExternalCachesDirectoryPath ;
 
 const TaskListCard = ({item, navigation}) => {
   let dataFull = item.item;
@@ -28,10 +32,20 @@ const TaskListCard = ({item, navigation}) => {
   const handleFilePress = async () => {
     try {
       if (data.status === 'complete') {
-        if (data.mimeType === MimeTypes.PDF) {
+        if (mimeTypeData.isPdfFile(data.mimeType)) {
           // if this is pdf
           navigation.push('PDFViewScreen', {
-            filePath: RNFS.ExternalCachesDirectoryPath + `/${dataFull[0]}.pdf`,
+            filePath: path + `/${dataFull[0]}.pdf`,
+          });
+        }else if (mimeTypeData.isImageFile(data.mimeType)) {
+          // if this is pdf
+          navigation.push('ImageViewScreen', {
+            filePath: path + `/${dataFull[0]}.${data.extension}`,
+          });
+        }else if (mimeTypeData.isDocFile(data.mimeType)) {
+          // if this is pdf
+          navigation.push('DocViewScreen', {
+            filePath: path + `/${dataFull[0]}.${data.extension}`,
           });
         }
       } else if (data.status === 'processing') {
@@ -111,14 +125,14 @@ const TaskListCard = ({item, navigation}) => {
                 size={28}
               />
             )}
-          {data.name?.length <= 10 && (
+          {data.name?.length <= 25 && (
             <Text className="text-slate-600 text-lg font-bold p-2 m-2">
               {data.name}
             </Text>
           )}
-          {data.name?.length > 10 && (
+          {data.name?.length > 25 && (
             <Text className="text-slate-600 text-lg font-bold p-2 m-2">
-              {data.name.slice(0, 10)}...
+              {data.name.slice(0, 25)}...
             </Text>
           )}
         </View>
