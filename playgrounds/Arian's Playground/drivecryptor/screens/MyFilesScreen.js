@@ -1,5 +1,8 @@
-import { View, Text, Pressable, FlatList, Alert } from 'react-native'
-import React, { useEffect, useState } from 'react'
+// Core
+import {Pressable, FlatList, Alert} from 'react-native';
+import React, {useEffect, useState} from 'react';
+
+// Configs
 import Config from '../config';
 
 // Components
@@ -7,108 +10,141 @@ import Header from '../components/Header';
 import FileListCard from '../components/FileListCard';
 
 // Icons
-import { ArrowUpTrayIcon } from 'react-native-heroicons/solid';
+import {ArrowUpTrayIcon} from 'react-native-heroicons/solid';
 
 // Utils
-import GoogleDriveUtil from "../utils/GoogleDriveUtil"
-import decryptionTaskUtil from "../utils/decryptionTaskUtil"
-import { MimeTypes } from '@robinbobin/react-native-google-drive-api-wrapper';
+import GoogleDriveUtil from '../utils/GoogleDriveUtil';
+import decryptionTaskUtil from '../utils/decryptionTaskUtil';
+import mimeTypeData from '../utils/mimeTypeData';
 
-const MyFilesScreen = ({ route, navigation }) => {
+// Google Drive API
+import {MimeTypes} from '@robinbobin/react-native-google-drive-api-wrapper';
+
+const MyFilesScreen = ({route, navigation}) => {
   const [fileList, setFileList] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [currentFolderID, setCurrentFolderID] = useState("root")
-  const [currentFolderName, setCurrentFolderName] = useState("/")
+  const [currentFolderID, setCurrentFolderID] = useState('root');
+  const [currentFolderName, setCurrentFolderName] = useState('/');
 
-  const getListOfDriveFiles = async (folderID=currentFolderID) => {
-    setRefreshing(true)
-    const secondsToTimeOut = Config.GOOGLE_API_TIMEOUT_IN_SEC; 
+  const getListOfDriveFiles = async (folderID = currentFolderID) => {
+    setRefreshing(true);
+    const secondsToTimeOut = Config.GOOGLE_API_TIMEOUT_IN_SEC;
     try {
       // Setup the GDrive instance
-      const gdrive = await GoogleDriveUtil.getInstance()
+      const gdrive = await GoogleDriveUtil.getInstance();
 
       // Get All Files List that has "folderID" as parents
-      let allFilesOwnedByUsed = await GoogleDriveUtil.getFilesList(gdrive, folderID);
+      let allFilesOwnedByUsed = await GoogleDriveUtil.getFilesList(
+        gdrive,
+        folderID,
+      );
 
-      let configObj = await GoogleDriveUtil.getConfigFileObject(gdrive)
+      let configObj = await GoogleDriveUtil.getConfigFileObject(gdrive);
       console.log(configObj);
 
       for (const key in allFilesOwnedByUsed) {
         if (Object.hasOwnProperty.call(allFilesOwnedByUsed, key)) {
           const file = allFilesOwnedByUsed[key];
-          allFilesOwnedByUsed[key]["isEncrypted"] = false
-          
+          allFilesOwnedByUsed[key]['isEncrypted'] = false;
+
           for (const encrypteFileID of configObj) {
-            if(file.id === encrypteFileID){
+            if (file.id === encrypteFileID) {
               // console.log("found a encrypted file");
               // console.log("encrypted name: ", file.name);
-              let originalName = await decryptionTaskUtil.decryptTaskText(file.name, "password-tmp");
+              let originalName = await decryptionTaskUtil.decryptTaskText(
+                file.name,
+                'password-tmp',
+              );
               // console.log("original name: ", originalName);
-              allFilesOwnedByUsed[key]["name"] = "[E]"+originalName
-              allFilesOwnedByUsed[key]["isEncrypted"] = true
-
+              allFilesOwnedByUsed[key]['name'] = '[Encrypted] ' + originalName;
+              allFilesOwnedByUsed[key]['isEncrypted'] = true;
 
               // extract ext name
-              let extension = originalName.substr(originalName.lastIndexOf('.') + 1)
-              if(extension.toLowerCase() === "pdf"){
-                allFilesOwnedByUsed[key]["mimeType"] = MimeTypes.PDF;
-              }
+              let extension = originalName
+                .substr(originalName.lastIndexOf('.') + 1)
+                .toLowerCase();
+              allFilesOwnedByUsed[key]['extension'] = extension;
+              allFilesOwnedByUsed[key]['mimeType'] =
+                mimeTypeData.getMimeTypeFromExt(extension);
+              break;
             }
           }
 
-
+          if (
+            mimeTypeData.isSupportedForPreview(
+              allFilesOwnedByUsed[key]['mimeType'],
+            ) &&
+            allFilesOwnedByUsed[key]['isEncrypted'] === false
+          ) {
+            let extension = allFilesOwnedByUsed[key]['name']
+              .substr(allFilesOwnedByUsed[key]['name'].lastIndexOf('.') + 1)
+              .toLowerCase();
+            allFilesOwnedByUsed[key]['extension'] = extension;
+          }
+          // if (!allFilesOwnedByUsed[key]['isEncrypted']) {
+          //   let name = allFilesOwnedByUsed[key]['name'];
+          //   let extension = name
+          //     .substr(name.lastIndexOf('.') + 1)
+          //     .toLowerCase();
+          //   allFilesOwnedByUsed[key]['extension'] = extension;
+          // }
         }
       }
 
-      for (const file of allFilesOwnedByUsed) {
-        
-      }
-      
-      setFileList(allFilesOwnedByUsed)
-      setRefreshing(false)
+      // console.log("After editing");
+      // console.log(allFilesOwnedByUsed);
+
+      setFileList(allFilesOwnedByUsed);
+      setRefreshing(false);
     } catch (error) {
-      if(error.message === "Aborted"){
-        Alert.alert("Timeout", `Check connection, timeout is set to ${secondsToTimeOut} seconds!`)
+      if (error.message === 'Aborted') {
+        Alert.alert(
+          'Timeout',
+          `Check connection, timeout is set to ${secondsToTimeOut} seconds!`,
+        );
       }
       console.log(error);
       navigation.goBack(); // go back
     }
-  }
-  
+  };
+
   // onFocus of current screen
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      const { folderID, folderName } = route.params; // get the folderID
-      setCurrentFolderID(folderID)
-      setCurrentFolderName(folderName)
-      getListOfDriveFiles(folderID)
+      const {folderID, folderName} = route.params; // get the folderID
+      setCurrentFolderID(folderID);
+      setCurrentFolderName(folderName);
+      getListOfDriveFiles(folderID);
     });
     return unsubscribe;
-  }, [navigation])
+  }, [navigation]);
 
   return (
     <>
-      <Header title="My Files" onPress={() => navigation.goBack()}/>
+      <Header title="My Files" onPress={() => navigation.goBack()} />
       <FlatList
         data={fileList}
-        renderItem={(item) => <FileListCard navigation={navigation} item={item}/>}
+        renderItem={item => (
+          <FileListCard navigation={navigation} item={item} />
+        )}
         // renderItem={FileListCard}
         keyExtractor={item => item.id} // given by google drive api itself
         onRefresh={getListOfDriveFiles}
         refreshing={refreshing}
       />
-      <Pressable className="absolute bottom-0 right-0 bg-flat_blue1 p-3 mr-5 mb-5 rounded-full" onPress={() => {
-        navigation.push("UploadFilesScreen", {
-          uploadDirID: currentFolderID,
-          uploadDirName: currentFolderName,
-          uploadFileInfo: null
-        })
-      }}>
-        <ArrowUpTrayIcon color="white" fill="white" size={30}/>
+      <Pressable
+        className="absolute bottom-0 right-0 bg-flat_blue1 p-3 mr-5 mb-5 rounded-full"
+        onPress={() => {
+          navigation.push('UploadFilesScreen', {
+            uploadDirID: currentFolderID,
+            uploadDirName: currentFolderName,
+            uploadFileInfo: null,
+          });
+        }}>
+        <ArrowUpTrayIcon color="white" fill="white" size={30} />
       </Pressable>
     </>
+  );
+};
 
-  )
-}
-
-export default MyFilesScreen
+export default MyFilesScreen;
