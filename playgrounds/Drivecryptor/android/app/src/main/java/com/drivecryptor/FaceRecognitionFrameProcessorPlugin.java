@@ -80,7 +80,7 @@ public class FaceRecognitionFrameProcessorPlugin extends FrameProcessorPlugin {
         Bitmap bm = BitmapUtils.getBitmap(image);
         // ^ until this everything is correct
 
-        List<asdasd> = FaceEngine.getInstance(context).detectFaces(bm);
+        // Face On Live Code Here
 
         return "bitmap got!";
     }
