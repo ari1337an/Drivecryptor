@@ -45,7 +45,7 @@ const DashboardScreen = ({navigation}) => {
         showGoBack={false}
       />
       <View>
-        <Pressable onPress={() => navigation.push('MyFilesScreen')}>
+        <Pressable onPress={() => navigation.push('FaceVerificationNavigationInterrupt', { screenName: "MyFilesScreen" })}>
           <DashboardCardItem title="My Files">
             <FolderIcon
               color="white"
@@ -54,7 +54,7 @@ const DashboardScreen = ({navigation}) => {
             />
           </DashboardCardItem>
         </Pressable>
-        <Pressable onPress={() => navigation.push('UploadFilesScreen')}>
+        <Pressable onPress={() => navigation.push('FaceVerificationNavigationInterrupt', { screenName: "UploadFilesScreen" })}>
           <DashboardCardItem title="Upload Files">
             <ArrowUpOnSquareStackIcon
               color="white"
@@ -63,7 +63,7 @@ const DashboardScreen = ({navigation}) => {
             />
           </DashboardCardItem>
         </Pressable>
-        <Pressable onPress={() => navigation.push('QueueTask')}>
+        <Pressable onPress={() => navigation.push('FaceVerificationNavigationInterrupt', { screenName: "QueueTask" })}>
           <DashboardCardItem title="Preview(s)">
             <QueueListIcon
               color="white"
@@ -72,8 +72,26 @@ const DashboardScreen = ({navigation}) => {
             />
           </DashboardCardItem>
         </Pressable>
+        <Pressable onPress={() => navigation.push('FaceVerificationTest')}>
+          <DashboardCardItem title="Face Verification Test">
+            <QueueListIcon
+              color="white"
+              fill={color_theme.flat_white1}
+              size={35}
+            />
+          </DashboardCardItem>
+        </Pressable>
+        <Pressable onPress={() => navigation.push('CurRefPic')}>
+          <DashboardCardItem title="View Reference Picture">
+            <QueueListIcon
+              color="white"
+              fill={color_theme.flat_white1}
+              size={35}
+            />
+          </DashboardCardItem>
+        </Pressable>
         <Pressable onPress={() => GoogleDriveUtil.resetAppData(navigation)}>
-          <DashboardCardItem title="Reset AppData">
+          <DashboardCardItem title="Delete Reference Picture">
             <UserMinusIcon
               color="white"
               fill={color_theme.flat_white1}

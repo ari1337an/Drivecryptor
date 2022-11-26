@@ -20,7 +20,7 @@ const path = RNFS.CachesDirectoryPath ;
 // const path = RNFS.ExternalCachesDirectoryPath;
 
 const logData = (uuid, message) => {
-  console.log(`Process ${uuid}: ${message}`);
+  // console.log(`Process ${uuid}: ${message}`);
 };
 
 const downloadFileContent = async (uuid, fileID, getBinary = false) => {
@@ -62,7 +62,7 @@ const encodeFileContent = async (uuid, fileContent) => {
 };
 
 const writeFileContent = async (uuid, extension, base64Content) => {
-  console.log(extension);
+  // console.log(extension);
   const fullPathToFile = path + `/${uuid}.${extension}`;
 
   // Save file locally

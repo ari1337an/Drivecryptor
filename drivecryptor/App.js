@@ -13,6 +13,12 @@ import BrowseDirectoryScreen from './screens/BrowseDirectoryScreen';
 import UploadFilesScreen from './screens/UploadFilesScreen';
 import CameraScreen from './screens/CameraScreen';
 import QueueTask from './screens/QueueTask';
+import FaceVerificationScreen from './screens/FaceVerificationScreen';
+import FaceVerificationTest from './screens/FaceVerificationTest';
+import FaceVerificationNavigationInterrupt from './screens/FaceVerificationNavigationInterrupt';
+import CurRefPic from './screens/CurRefPic';
+import ImageViewScreen from './screens/ImageViewScreen';
+import PDFViewScreen from './screens/PDFViewScreen';
 
 // Notification Handler
 import notifee from '@notifee/react-native';
@@ -65,7 +71,31 @@ function App() {
             uploadFileInfo: null,
           }}
         />
-        {/* <Stack.Screen
+        <Stack.Screen
+          name="FaceVerificationScreen"
+          component={FaceVerificationScreen}
+          initialParams={{
+            uuid: null,
+            data: null,
+          }}
+        />
+        <Stack.Screen
+          name="FaceVerificationNavigationInterrupt"
+          component={FaceVerificationNavigationInterrupt}
+          initialParams={{
+            screenName: null,
+            parameters: null,
+          }}
+        />
+        <Stack.Screen
+          name="FaceVerificationTest"
+          component={FaceVerificationTest}
+        />
+        <Stack.Screen
+          name="CurRefPic"
+          component={CurRefPic}
+        />
+        <Stack.Screen
           name="PDFViewScreen"
           component={PDFViewScreen}
           initialParams={{filePath: null}}
@@ -74,7 +104,7 @@ function App() {
           name="ImageViewScreen"
           component={ImageViewScreen}
           initialParams={{filePath: null}}
-        /> */}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

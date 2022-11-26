@@ -102,16 +102,15 @@ const LoginScreen = ({navigation}) => {
       await GoogleDriveUtil.createConfigFileIfNotExists(gdrive);
 
       const refPicExists = await GoogleDriveUtil.RefPicExists(gdrive);
-      console.log(refPicExists);
+      // console.log(refPicExists);
       if (refPicExists === true) {
         Alert.alert('Success!', `Signed in using ${userInfo.user.email}`);
         navigation.navigate('DashboardScreen');
       } else {
-        console.log('No refPic found!');
+        // console.log('No refPic found!');
         navigation.navigate('CameraScreen');
       }
 
-      navigation.navigate('DashboardScreen');
     } catch (error) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED)
         Alert.alert('Failed!', 'User Canceled The Login Flow!');

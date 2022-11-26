@@ -9,10 +9,6 @@ import GoogleDriveUtil from '../utils/GoogleDriveUtil';
 // Camera
 import {Camera, useCameraDevices} from 'react-native-vision-camera';
 
-// Themes, Icons
-import color_theme from '../color-theme';
-import {CameraIcon} from 'react-native-heroicons/solid';
-
 const CameraScreen = ({navigation}) => {
   const [uploading, setUploading] = useState(false);
   const devices = useCameraDevices();
@@ -69,6 +65,7 @@ const CameraScreen = ({navigation}) => {
           isActive={true}
           ref={camera}
           photo={true}
+          preset="cif-352x288"
           enableZoomGesture
         />
         <Pressable

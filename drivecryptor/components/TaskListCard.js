@@ -35,21 +35,22 @@ const TaskListCard = ({item, navigation}) => {
   const handleFilePress = async () => {
     try {
       if (data.status === 'complete') {
-        if (mimeTypeData.isPdfFile(data.mimeType)) {
-          // if this is pdf
-          // navigation.push('PDFViewScreen', {
-          //   filePath: path + `/${dataFull[0]}.pdf`,
-          // });
-          FileViewer.open('file://' + path + `/${dataFull[0]}.${data.extension}`)
-        }else if (mimeTypeData.isImageFile(data.mimeType)) {
-          // if this is image
-          // navigation.push('ImageViewScreen', {
-          //   filePath: path + `/${dataFull[0]}.${data.extension}`,
-          // });
-          FileViewer.open('file://' + path + `/${dataFull[0]}.${data.extension}`)
-        }else if (mimeTypeData.isDocFile(data.mimeType)) {
-          FileViewer.open('file://' + path + `/${dataFull[0]}.${data.extension}`)
-        }
+        navigation.push('FaceVerificationScreen', {
+          uuid: dataFull[0],
+          data: data
+        });
+
+        // if (mimeTypeData.isPdfFile(data.mimeType)) {
+        //   navigation.push('PDFViewScreen', {
+        //     filePath: path + `/${dataFull[0]}.pdf`,
+        //   });
+        // }else if (mimeTypeData.isImageFile(data.mimeType)) {
+        //   navigation.push('ImageViewScreen', {
+        //     filePath: path + `/${dataFull[0]}.${data.extension}`,
+        //   });
+        // }else if (mimeTypeData.isDocFile(data.mimeType)) {
+        //   FileViewer.open('file://' + path + `/${dataFull[0]}.${data.extension}`)
+        // }
       } else if (data.status === 'processing') {
         // retry the process
         Alert.alert(

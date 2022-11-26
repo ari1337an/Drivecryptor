@@ -121,7 +121,7 @@ const MyFilesScreen = ({route, navigation}) => {
 
   return (
     <>
-      <Header title="My Files" onPress={() => navigation.goBack()} />
+      <Header title="My Files" onPress={() => navigation.navigate("DashboardScreen")} />
       <FlatList
         data={fileList}
         renderItem={item => (

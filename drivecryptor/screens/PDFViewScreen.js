@@ -7,6 +7,7 @@ import color_theme from '../color-theme';
 
 // PDF Viewer
 import Pdf from 'react-native-pdf';
+import { ArrowUturnLeftIcon } from 'react-native-heroicons/solid';
 
 const PDFViewScreen = ({navigation, route}) => {
   const [filePathPDF, setFilePathPDF] = useState(null);
@@ -32,7 +33,18 @@ const PDFViewScreen = ({navigation, route}) => {
         </View>
       )}
       {!loading && (
-        <View className="flex-1 justify-start items-center mt-0">
+        <View className="flex-1">
+          <View className="flex-row items-center justify-between px-4 py-4 bg-flat_blue2 mb-2">
+            <ArrowUturnLeftIcon
+              onPress={() => navigation.push('DashboardScreen')}
+              color="white"
+              fill="white"
+              size={30}
+            />
+            <Text className="font-medium text-white text-2xl">
+              PDF Viewer
+            </Text>
+          </View>
           <Pdf
             className="flex-1 w-full h-full"
             source={filePathPDF}

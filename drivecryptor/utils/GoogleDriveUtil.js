@@ -11,12 +11,13 @@ import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import 'react-native-get-random-values';
 import cryptoJs from 'crypto-js';
 import LoginUtils from "./LoginUtils"
+import base64Encoder from '../utils/base64Encoder';
 
 // File System
 import RNFS from 'react-native-fs';
 
 const logData = message => {
-  console.log(message);
+  // console.log(message);
 };
 
 const getInstance = async () => {
@@ -112,14 +113,14 @@ const createConfigFileIfNotExists = async instance => {
   let allFileInAppData = await getFileListInAppData(instance);
   let found = false;
   for (const file of allFileInAppData) {
-    console.log(file);
+    // console.log(file);
     if (file.mimeType === MimeTypes.JSON && file.name === 'config') {
       found = true;
-      console.log('Found config.js, id: ', file.id);
+      // console.log('Found config.js, id: ', file.id);
     }
   }
   if (found === false) {
-    console.log('Didnot found config.js in appdata, creating one now!');
+    // console.log('Didnot found config.js in appdata, creating one now!');
     // Create config.json file
     let id = await instance.files
       .newMultipartUploader()
@@ -130,7 +131,7 @@ const createConfigFileIfNotExists = async instance => {
         parents: ['appDataFolder'],
       })
       .execute();
-    console.log('appdata config.js details: ', id.id);
+    // console.log('appdata config.js details: ', id.id);
   }
 };
 
@@ -155,10 +156,10 @@ const RefPicExists = async instance => {
   let allFileInAppData = await getFileListInAppData(instance);
   let found = false;
   for (const file of allFileInAppData) {
-    console.log(file);
+    // console.log(file);
     if (file.mimeType === 'image/jpeg' && file.name === 'refPic') {
       found = true;
-      console.log('Found refPic, id: ', file.id);
+      // console.log('Found refPic, id: ', file.id);
     }
   }
   return found;
@@ -167,18 +168,31 @@ const RefPicExists = async instance => {
 const getRefPicFileID = async instance => {
   let allFileInAppData = await getFileListInAppData(instance);
   for (const file of allFileInAppData) {
-    console.log(file);
+    // console.log(file);
     if (file.mimeType === 'image/jpeg' && file.name === 'refPic') {
       return file.id;
     }
   }
 };
 
+const getRefPicBase64 = async instance => {
+  let allFileInAppData = await getFileListInAppData(instance);
+  for (const file of allFileInAppData) {
+    if (file.mimeType === 'image/jpeg' && file.name === 'refPic') {
+      console.log("found it");
+      let fileContent = await instance.files.getBinary(file.id);
+      let base64Conent = await base64Encoder(fileContent);
+      console.log("sent it");
+      return base64Conent;
+    }
+  }
+}
+
 const uploadRefPicToAppDataFolder = async (instance, filePath) => {
   if (RefPicExists(instance) === true) {
-    console.log('Found a refPic, not updating the old file!');
+    // console.log('Found a refPic, not updating the old file!');
   } else {
-    console.log("Couldn't find old refPic, so, uploading new one.");
+    // console.log("Couldn't find old refPic, so, uploading new one.");
     let fileContent = await RNFS.readFile(filePath, 'base64');
     let details = await instance.files
       .newMultipartUploader()
@@ -189,7 +203,7 @@ const uploadRefPicToAppDataFolder = async (instance, filePath) => {
         parents: ['appDataFolder'],
       })
       .execute();
-    console.log('refPic upload done, file id', details.id);
+    // console.log('refPic upload done, file id', details.id);
   }
 };
 
@@ -198,7 +212,9 @@ const resetAppData = async (navigation = null) => {
     let instance = await getInstance()
     let allFileInAppData = await getFileListInAppData(instance);
     for (const file of allFileInAppData) {
-      await instance.files.delete(file.id)
+      if (file.mimeType === 'image/jpeg' && file.name === 'refPic') {
+        await instance.files.delete(file.id)
+      }
     }
     await LoginUtils.Signout(navigation);
   } catch (error) {
@@ -219,6 +235,7 @@ const exports = {
   RefPicExists,
   getRefPicFileID,
   resetAppData,
+  getRefPicBase64
 };
 
 export default exports;
