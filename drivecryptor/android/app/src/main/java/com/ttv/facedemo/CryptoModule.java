@@ -24,7 +24,10 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class CryptoModule extends ReactContextBaseJavaModule {
-    public CryptoModule(ReactApplicationContext reactContext){
+
+    private static final String ALGORITHM = "AES/CBC/PKCS5PADDING";
+
+    public CryptoModule(ReactApplicationContext reactContext) {
         super(reactContext);
     }
 
@@ -61,16 +64,10 @@ public class CryptoModule extends ReactContextBaseJavaModule {
         byte[] ciphertext = null;
         try {
             ciphertext = aesEncrypt(plaintext, secretKey);
-        } catch (IllegalBlockSizeException e) {
-            promise.reject("Illegal block size exception", e);
-        } catch (NoSuchPaddingException e) {
-            promise.reject("No such padding exception", e);
-        } catch (NoSuchAlgorithmException e) {
-            promise.reject("No such algorithm exception", e);
-        } catch (BadPaddingException e) {
-            promise.reject("Bad padding exception", e);
+        } catch (IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException e) {
+            promise.reject(e);
         } catch (InvalidKeyException e) {
-            promise.reject("Invalid key exception", e);
+            promise.reject("Invalid encryption key", e);
         }
 
         if (ciphertext == null) {
@@ -95,16 +92,10 @@ public class CryptoModule extends ReactContextBaseJavaModule {
         byte[] ciphertext = null;
         try {
             ciphertext = aesEncrypt(plaintext, secretKey);
-        } catch (IllegalBlockSizeException e) {
-            promise.reject("Illegal block size exception", e);
-        } catch (NoSuchPaddingException e) {
-            promise.reject("No such padding exception", e);
-        } catch (NoSuchAlgorithmException e) {
-            promise.reject("No such algorithm exception", e);
-        } catch (BadPaddingException e) {
-            promise.reject("Bad padding exception", e);
+        } catch (IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException e) {
+            promise.reject(e);
         } catch (InvalidKeyException e) {
-            promise.reject("Invalid key exception", e);
+            promise.reject("Invalid encryption key", e);
         }
 
         if (ciphertext == null) {
@@ -112,6 +103,61 @@ public class CryptoModule extends ReactContextBaseJavaModule {
             return;
         }
         promise.resolve(toBase64String(ciphertext));
+    }
+
+    /**
+     * Decrypts the given AES-encrypted ciphertext and returns the resulting plaintext.
+     * @param encryptedData The ciphertext to be decrypted
+     * @param key The Base64 representation of the decryption key to use
+     */
+    @ReactMethod
+    public void decrypt(ReadableArray encryptedData, String key, Promise promise) {
+        final SecretKey secretKey = toSecretKey(key);
+        final byte[] ciphertext = toByteArray(encryptedData);
+
+        // Decrypt `ciphertext` into `plaintext`.
+        byte[] plaintext = null;
+        try {
+            plaintext = aesDecrypt(ciphertext, secretKey);
+        } catch (IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException e) {
+            promise.reject(e);
+        } catch (InvalidKeyException e) {
+            promise.reject("Invalid decryption key", e);
+        }
+
+        if (plaintext == null) {
+            promise.reject("Decryption failed", "No plaintext was obtained.");
+            return;
+        }
+        promise.resolve(toWritableArray(plaintext));
+    }
+
+    /**
+     * Decrypts the AES-encrypted ciphertext represented in Base64 by the given string and returns
+     * a string containing the Base64 representation of the decrypted plaintext.
+     * @param encryptedData The Base64 representation of the ciphertext to be decrypted
+     * @param key The Base64 representation of the decryption key to use
+     */
+    @ReactMethod
+    public void decrypt(String encryptedData, String key, Promise promise) {
+        final SecretKey secretKey = toSecretKey(key);
+        final byte[] ciphertext = toByteArray(encryptedData);
+
+        // Decrypt `ciphertext` into `plaintext`.
+        byte[] plaintext = null;
+        try {
+            plaintext = aesDecrypt(ciphertext, secretKey);
+        } catch (IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException e) {
+            promise.reject(e);
+        } catch (InvalidKeyException e) {
+            promise.reject("Invalid decryption key", e);
+        }
+
+        if (plaintext == null) {
+            promise.reject("Decryption failed", "No plaintext was obtained.");
+            return;
+        }
+        promise.resolve(toBase64String(plaintext));
     }
 
     /**
@@ -189,9 +235,29 @@ public class CryptoModule extends ReactContextBaseJavaModule {
      */
     @Nullable
     private byte[] aesEncrypt(byte[] plaintext, SecretKey secretKey) throws IllegalBlockSizeException, NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
-        final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+        final Cipher cipher = Cipher.getInstance(ALGORITHM);
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
         return cipher.doFinal(plaintext);
+    }
+
+    /**
+     * Decrypts the given AES-encrypted ciphertext into a newly allocated buffer and returns the result.
+     * @param ciphertext The ciphertext to be decrypted
+     * @param secretKey The {@link SecretKey} to use as the decryption key
+     * @return The resulting plaintext, in a newly allocated byte array
+     * @throws IllegalBlockSizeException for bugs in the implementation
+     * @throws NoSuchPaddingException for bugs in the implementation
+     * @throws NoSuchAlgorithmException for bugs in the implementation
+     * @throws BadPaddingException for bugs in the implementation
+     * @throws InvalidKeyException if the given key is inappropriate for initializing a cipher,
+     * or requires algorithm parameters that cannot be determined from the given key,
+     * or if the given key has a keysize that exceeds the maximum allowable keysize.
+     */
+    @Nullable
+    private byte[] aesDecrypt(byte[] ciphertext, SecretKey secretKey) throws IllegalBlockSizeException, NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+        return cipher.doFinal(ciphertext);
     }
 
     @NonNull
