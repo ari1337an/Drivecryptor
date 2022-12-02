@@ -14,29 +14,36 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 public class CryptoModule extends ReactContextBaseJavaModule {
-    private ReactApplicationContext mContext;
-
     public CryptoModule(ReactApplicationContext reactContext){
         super(reactContext);
-        mContext = reactContext;
     }
 
+    /**
+     * Generates a new 256-bit symmetric encryption key for the AES algorithm and returns its
+     * Base64-encoded string representation.
+     */
     @ReactMethod
     public void getNewSecretKey(Promise promise) {
         try {
             // Generate a SecretKey.
-            KeyGenerator keygen = KeyGenerator.getInstance("AES");
+            final KeyGenerator keygen = KeyGenerator.getInstance("AES");
             keygen.init(256);
-            SecretKey key = keygen.generateKey();
+            final SecretKey key = keygen.generateKey();
 
-            // Convert the SecretKey to base64-encoded String.
-            byte[] rawData = key.getEncoded();
-            String keyBase64 = Base64.getEncoder().encodeToString(rawData);
-
-            promise.resolve(keyBase64);
+            promise.resolve(toBase64String(key.getEncoded()));
         } catch (NoSuchAlgorithmException e) {
             promise.reject(e);
         }
+    }
+
+    /**
+     * Encodes the given byte array into a newly allocated String using the Base64 encoding scheme.
+     * @param src The byte array to be encoded
+     * @return The {@link String} containing the resulting Base64 characters
+     */
+    @NonNull
+    private String toBase64String(byte[] src) {
+        return Base64.getEncoder().encodeToString(src);
     }
 
     @NonNull
