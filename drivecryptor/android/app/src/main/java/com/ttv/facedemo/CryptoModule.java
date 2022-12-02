@@ -25,10 +25,28 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class CryptoModule extends ReactContextBaseJavaModule {
 
-    private static final String ALGORITHM = "AES/CBC/PKCS5PADDING";
+    private static final String KEYGEN_ALGORITHM = "AES";
+    private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5PADDING";
 
     public CryptoModule(ReactApplicationContext reactContext) {
         super(reactContext);
+    }
+
+    /**
+     * Generates and returns a new 256-bit symmetric encryption key for the AES algorithm.
+     */
+    @ReactMethod
+    public void getNewSecretKey(Promise promise) {
+        try {
+            // Generate a SecretKey.
+            final KeyGenerator keygen = KeyGenerator.getInstance(KEYGEN_ALGORITHM);
+            keygen.init(256);
+            final SecretKey key = keygen.generateKey();
+
+            promise.resolve(toWritableArray(key.getEncoded()));
+        } catch (NoSuchAlgorithmException e) {
+            promise.reject(e);
+        }
     }
 
     /**
@@ -36,10 +54,10 @@ public class CryptoModule extends ReactContextBaseJavaModule {
      * Base64-encoded string representation.
      */
     @ReactMethod
-    public void getNewSecretKey(Promise promise) {
+    public void getNewSecretKeyBase64(Promise promise) {
         try {
             // Generate a SecretKey.
-            final KeyGenerator keygen = KeyGenerator.getInstance("AES");
+            final KeyGenerator keygen = KeyGenerator.getInstance(KEYGEN_ALGORITHM);
             keygen.init(256);
             final SecretKey key = keygen.generateKey();
 
@@ -53,12 +71,12 @@ public class CryptoModule extends ReactContextBaseJavaModule {
      * Encrypts the given data using the AES encryption algorithm and returns the resulting
      * ciphertext.
      * @param data The data to encrypt
-     * @param key The Base64 representation of the encryption key to use
+     * @param key The encryption key to use
      */
     @ReactMethod
-    public void encrypt(ReadableArray data, String key, Promise promise) {
-        final SecretKey secretKey = toSecretKey(key);
+    public void encrypt(ReadableArray data, ReadableArray key, Promise promise) {
         final byte[] plaintext = toByteArray(data);
+        final SecretKey secretKey = toSecretKey(toByteArray(key));
 
         // Encrypt `plaintext` into `ciphertext`.
         byte[] ciphertext = null;
@@ -85,8 +103,8 @@ public class CryptoModule extends ReactContextBaseJavaModule {
      */
     @ReactMethod
     public void encrypt(String data, String key, Promise promise) {
-        final SecretKey secretKey = toSecretKey(key);
         final byte[] plaintext = toByteArray(data);
+        final SecretKey secretKey = toSecretKey(toByteArray(key));
 
         // Encrypt `plaintext` into `ciphertext`.
         byte[] ciphertext = null;
@@ -108,12 +126,12 @@ public class CryptoModule extends ReactContextBaseJavaModule {
     /**
      * Decrypts the given AES-encrypted ciphertext and returns the resulting plaintext.
      * @param encryptedData The ciphertext to be decrypted
-     * @param key The Base64 representation of the decryption key to use
+     * @param key The decryption key to use
      */
     @ReactMethod
-    public void decrypt(ReadableArray encryptedData, String key, Promise promise) {
-        final SecretKey secretKey = toSecretKey(key);
+    public void decrypt(ReadableArray encryptedData, ReadableArray key, Promise promise) {
         final byte[] ciphertext = toByteArray(encryptedData);
+        final SecretKey secretKey = toSecretKey(toByteArray(key));
 
         // Decrypt `ciphertext` into `plaintext`.
         byte[] plaintext = null;
@@ -140,8 +158,8 @@ public class CryptoModule extends ReactContextBaseJavaModule {
      */
     @ReactMethod
     public void decrypt(String encryptedData, String key, Promise promise) {
-        final SecretKey secretKey = toSecretKey(key);
         final byte[] ciphertext = toByteArray(encryptedData);
+        final SecretKey secretKey = toSecretKey(toByteArray(key));
 
         // Decrypt `ciphertext` into `plaintext`.
         byte[] plaintext = null;
@@ -182,15 +200,13 @@ public class CryptoModule extends ReactContextBaseJavaModule {
     }
 
     /**
-     * Constructs a {@link SecretKey} from the given Base64-string representation.
-     * @param src The {@link String} containing the Base64 representation a byte array
-     * @return The {@link SecretKey} created from the byte array represented by the given
-     * Base64-encoded String
+     * Creates a {@link SecretKey} from the given byte array.
+     * @param keyData The key material of the secret key
+     * @return The {@link SecretKey} constructed from the byte array
      */
     @NonNull
-    private SecretKey toSecretKey(String src) {
-        final byte[] decodedKey = Base64.getDecoder().decode(src);
-        return new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
+    private SecretKey toSecretKey(@NonNull byte[] keyData) {
+        return new SecretKeySpec(keyData, 0, keyData.length, KEYGEN_ALGORITHM);
     }
 
     /**
@@ -235,7 +251,7 @@ public class CryptoModule extends ReactContextBaseJavaModule {
      */
     @Nullable
     private byte[] aesEncrypt(byte[] plaintext, SecretKey secretKey) throws IllegalBlockSizeException, NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
-        final Cipher cipher = Cipher.getInstance(ALGORITHM);
+        final Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
         return cipher.doFinal(plaintext);
     }
