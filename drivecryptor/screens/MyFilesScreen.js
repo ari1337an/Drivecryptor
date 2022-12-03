@@ -1,6 +1,6 @@
 // Core
-import {Pressable, FlatList, Alert} from 'react-native';
-import React, {useEffect, useState} from 'react';
+import {Pressable, FlatList, Alert, BackHandler, DeviceEventEmitter} from 'react-native';
+import React, {useCallback, useEffect, useState} from 'react';
 
 // Configs
 import Config from '../config';
@@ -19,12 +19,35 @@ import mimeTypeData from '../utils/mimeTypeData';
 
 // Google Drive API
 import {MimeTypes} from '@robinbobin/react-native-google-drive-api-wrapper';
+import {useFocusEffect} from '@react-navigation/native';
 
 const MyFilesScreen = ({route, navigation}) => {
   const [fileList, setFileList] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [currentFolderID, setCurrentFolderID] = useState('root');
   const [currentFolderName, setCurrentFolderName] = useState('/');
+
+  // Double Backpress
+  const [pressedBackBtn, setPressedBackBtn] = useState(false);
+  useEffect(() => {
+    if (pressedBackBtn === true) {
+      navigation.pop(2);
+      setPressedBackBtn(false);
+    }
+  }, [pressedBackBtn]);
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        setPressedBackBtn(true);
+        return true;
+      };
+      const subscription = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => subscription.remove();
+    }, []),
+  );
 
   const getListOfDriveFiles = async (folderID = currentFolderID) => {
     setRefreshing(true);
@@ -40,7 +63,6 @@ const MyFilesScreen = ({route, navigation}) => {
       );
 
       let configObj = await GoogleDriveUtil.getConfigFileObject(gdrive);
-      console.log(configObj);
 
       for (const key in allFilesOwnedByUsed) {
         if (Object.hasOwnProperty.call(allFilesOwnedByUsed, key)) {
@@ -49,13 +71,10 @@ const MyFilesScreen = ({route, navigation}) => {
 
           for (const encrypteFileID of configObj) {
             if (file.id === encrypteFileID) {
-              // console.log("found a encrypted file");
-              // console.log("encrypted name: ", file.name);
               let originalName = await decryptionTaskUtil.decryptTaskText(
                 file.name,
                 'password-tmp',
               );
-              // console.log("original name: ", originalName);
               allFilesOwnedByUsed[key]['name'] = '[Encrypted] ' + originalName;
               allFilesOwnedByUsed[key]['isEncrypted'] = true;
 
@@ -81,18 +100,8 @@ const MyFilesScreen = ({route, navigation}) => {
               .toLowerCase();
             allFilesOwnedByUsed[key]['extension'] = extension;
           }
-          // if (!allFilesOwnedByUsed[key]['isEncrypted']) {
-          //   let name = allFilesOwnedByUsed[key]['name'];
-          //   let extension = name
-          //     .substr(name.lastIndexOf('.') + 1)
-          //     .toLowerCase();
-          //   allFilesOwnedByUsed[key]['extension'] = extension;
-          // }
         }
       }
-
-      // console.log("After editing");
-      // console.log(allFilesOwnedByUsed);
 
       setFileList(allFilesOwnedByUsed);
       setRefreshing(false);
@@ -121,7 +130,10 @@ const MyFilesScreen = ({route, navigation}) => {
 
   return (
     <>
-      <Header title="My Files" onPress={() => navigation.navigate("DashboardScreen")} />
+      <Header
+        title="My Files"
+        onPress={() => DeviceEventEmitter.emit("hardwareBackPress",'')}
+      />
       <FlatList
         data={fileList}
         renderItem={item => (

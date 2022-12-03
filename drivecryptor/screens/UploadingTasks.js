@@ -12,8 +12,9 @@ import TaskListCard from '../components/TaskListCard';
 // Icons
 import {ArrowUturnLeftIcon, TrashIcon} from 'react-native-heroicons/solid';
 import { useFocusEffect } from '@react-navigation/native';
+import UploadingTaskCard from '../components/UploadingTaskCard';
 
-const QueueTask = ({navigation, route}) => {
+const UploadingTasks = ({navigation, route}) => {
   const [taskList, setTaskList] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -40,8 +41,8 @@ const QueueTask = ({navigation, route}) => {
     setRefreshing(true);
     let values = [];
     try {
-      let keysForPreviews = await AsyncStorageUtil.getAllPreviewKeys();
-      values = await AsyncStorage.multiGet(keysForPreviews);
+      let filteredKeys = await AsyncStorageUtil.getAllUploadKeys();
+      values = await AsyncStorage.multiGet(filteredKeys);
       setTaskList(values);
       setRefreshing(false);
     } catch (e) {
@@ -52,8 +53,8 @@ const QueueTask = ({navigation, route}) => {
 
   const handleClearAsyncStorage = async () => {
     try {
-      await AsyncStorage.multiRemove(await AsyncStorageUtil.getAllPreviewKeys());
-      navigation.push('QueueTask');
+      await AsyncStorage.multiRemove(await AsyncStorageUtil.getAllUploadKeys());
+      navigation.push('UploadingTasks');
     } catch (error) {
       console.log(error);
     }
@@ -76,7 +77,7 @@ const QueueTask = ({navigation, route}) => {
           fill="white"
           size={30}
         />
-        <Text className="font-medium text-white text-2xl">Download Tasks</Text>
+        <Text className="font-medium text-white text-2xl">Upload Tasks</Text>
         <TrashIcon
           color="white"
           fill="white"
@@ -87,7 +88,7 @@ const QueueTask = ({navigation, route}) => {
       <FlatList
         data={taskList}
         renderItem={item => (
-          <TaskListCard navigation={navigation} item={item} />
+          <UploadingTaskCard navigation={navigation} item={item} />
         )}
         keyExtractor={item => item[0]}
         onRefresh={fetchCurrentTasksStatus}
@@ -97,4 +98,4 @@ const QueueTask = ({navigation, route}) => {
   );
 };
 
-export default QueueTask;
+export default UploadingTasks;

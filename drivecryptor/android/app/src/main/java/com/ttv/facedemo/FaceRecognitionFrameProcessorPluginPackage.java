@@ -19,7 +19,7 @@ public class FaceRecognitionFrameProcessorPluginPackage implements ReactPackage 
     @Override
     public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactApplicationContext) {
         List<NativeModule> modules = new ArrayList<>();
-        modules.add(new FaceRecognitionModule(reactApplicationContext));
+//        modules.add(new FaceRecognitionModule(reactApplicationContext));
 
         FaceRecognitionFrameProcessorPlugin plugin = new FaceRecognitionFrameProcessorPlugin();
         plugin.setContext(reactApplicationContext);

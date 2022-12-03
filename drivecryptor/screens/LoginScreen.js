@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  DeviceEventEmitter,
 } from 'react-native';
 
 // Config, Color Themes
@@ -22,6 +23,8 @@ import GoogleDriveUtil from '../utils/GoogleDriveUtil';
 
 // Google Drive
 import {GDrive} from '@robinbobin/react-native-google-drive-api-wrapper';
+
+import {CheckCircleIcon, CheckIcon} from 'react-native-heroicons/solid';
 
 // Google Signin Configurations
 GoogleSignin.configure({
@@ -39,78 +42,81 @@ GoogleSignin.configure({
 const LoginScreen = ({navigation}) => {
   const [focusComplete, setFocusComplete] = useState(false); // 0 -> yet to run 'onScreenFocus', 1-> ran it.
   const [loginStatus, setLoginStatus] = useState(0); // 0 => not logged in, 1 => logged, 2 => processing
+  const [foundAppData, setFoundAppData] = useState(false);
+  const [eventMessages, setEventMessages] = useState([]);
 
-  const handleSigninUserInfo = async userInfoParam => {
-    try {
-      const tokens = await GoogleSignin.getTokens(); // retrieve the access token
-      let userInfo = userInfoParam;
+  useEffect(() => {
+    const onLoginScreenEventRun = params => {
+      // console.log('Event Emitter [LoginScreenEvents]:', params);
+      setEventMessages(current => [...current, params]);
+    };
+    const subscription = DeviceEventEmitter.addListener(
+      'LoginScreenEvents',
+      onLoginScreenEventRun,
+    );
+    return () => subscription.remove();
+  }, []);
 
-      // Make manipulations
-      delete userInfo.idToken; // For now, idToken is not required
-      userInfo['accessToken'] = tokens?.accessToken; // populate the access_token once
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const onScreenFocus = async () => {
-    setFocusComplete(false);
-    // Current screen is focused
-    try {
-      // Check if User is already signed in
-      const isSignedIn = await GoogleSignin.isSignedIn();
-
-      if (isSignedIn === true) {
-        // Acknowledge the past signed in user
-        setLoginStatus(2);
-        const userInfo = await GoogleSignin.signInSilently(); // login to play service silently
-        handleSigninUserInfo(userInfo);
-        setLoginStatus(1);
-        setFocusComplete(true);
-        navigation.navigate('DashboardScreen');
-      } else {
-        setLoginStatus(0);
-        setFocusComplete(true);
-      }
-    } catch (error) {
-      console.log(error);
-      setFocusComplete(true);
-    }
-  };
-
-  // Check for current login status when user focuses on the screen
+  // onFocus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      onScreenFocus();
+      (async () => {
+        setFocusComplete(false);
+        setEventMessages([]);
+        try {
+          const isSignedIn = await GoogleSignin.isSignedIn();
+          if (isSignedIn === true) {
+            setLoginStatus(2);
+            await GoogleSignin.signInSilently();
+            DeviceEventEmitter.emit(
+              'LoginScreenEvents',
+              'Successfully Signed In!',
+            );
+            const token = await GoogleSignin.getTokens();
+            await loadAppData(token);
+            setLoginStatus(1);
+            setFocusComplete(true);
+          } else {
+            setLoginStatus(0);
+            setFocusComplete(true);
+          }
+        } catch (error) {
+          console.log(error);
+          setFocusComplete(true);
+        }
+      })();
     });
     return unsubscribe;
   }, [navigation]);
+
+  // onLoginSuccess
+  useEffect(() => {
+    if (loginStatus === 1 && foundAppData === true) {
+      navigation.navigate('DashboardScreen');
+    } else if (loginStatus === 1 && foundAppData === false) {
+      navigation.navigate('CameraScreen');
+    }
+  }, [loginStatus, foundAppData]);
+
+  // loads AppData & Cache them
+  const loadAppData = async token => {
+    const accessToken = token.accessToken;
+    const gdrive = await GoogleDriveUtil.getInstanceFromToken(accessToken);
+    const refPicExists = await GoogleDriveUtil.loadAppData(gdrive);
+    DeviceEventEmitter.emit('LoginScreenEvents', 'AppData Synced!');
+    if (refPicExists === true) setFoundAppData(true);
+    else setFoundAppData(false);
+  };
 
   const SignIn = async () => {
     setLoginStatus(2);
     try {
       await GoogleSignin.hasPlayServices();
-      let userInfo = await GoogleSignin.signIn();
+      await GoogleSignin.signIn();
       let token = await GoogleSignin.getTokens();
-      handleSigninUserInfo(userInfo);
+      DeviceEventEmitter.emit('LoginScreenEvents', 'Successfully Signed In!');
+      await loadAppData(token);
       setLoginStatus(1);
-
-      // Create config.json in appdata space If Not Already Created
-      const gdrive = await GoogleDriveUtil.getInstanceFromToken(
-        token.accessToken,
-      );
-      await GoogleDriveUtil.createConfigFileIfNotExists(gdrive);
-
-      const refPicExists = await GoogleDriveUtil.RefPicExists(gdrive);
-      // console.log(refPicExists);
-      if (refPicExists === true) {
-        Alert.alert('Success!', `Signed in using ${userInfo.user.email}`);
-        navigation.navigate('DashboardScreen');
-      } else {
-        // console.log('No refPic found!');
-        navigation.navigate('CameraScreen');
-      }
-
     } catch (error) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED)
         Alert.alert('Failed!', 'User Canceled The Login Flow!');
@@ -123,31 +129,39 @@ const LoginScreen = ({navigation}) => {
     }
   };
 
-  const hasPreviousAccount = async () => {
-    const gdrive = new GDrive();
-    const currentTokens = await GoogleSignin.getTokens();
-    gdrive.accessToken = currentTokens?.accessToken;
-
-    const res = await gdrive.files.list({spaces: 'appDataFolder'});
-    return res.files.length > 0;
-  };
-
   return (
     <View className="flex-1 justify-center items-center">
       <Image
         style={{width: '50%', height: 200, resizeMode: 'stretch'}}
         source={require('../images/Google-Drive-w-padlock.png')}
       />
-      {/*<LockClosedIcon
-        color="black" fill="black" size={50}
-      />*/}
       <Text className="text-slate-600 text-3xl mt-5">Drivecryptor</Text>
-      {focusComplete === false && (
-        <ActivityIndicator
-          className="mt-10"
-          size="large"
-          color={color_theme.flat_blue1}
-        />
+      {(focusComplete === false || (focusComplete === true && loginStatus === 2 ))&& (
+        <>
+          <View className="mt-5">
+            {eventMessages.map((item, i) => {
+              return (
+                <View
+                  key={i}
+                  className="flex-row gap-x-2 justify-start items-center">
+                  <CheckCircleIcon
+                    color="black"
+                    fill={color_theme.flat_green1}
+                    size={35}
+                  />
+                  <Text>{item}</Text>
+                </View>
+              );
+            })}
+            <View className="mt-2 flex-row gap-x-2 justify-center items-center">
+              <ActivityIndicator
+                size="small"
+                color={color_theme.flat_midnight1}
+              />
+              <Text>Please Wait...</Text>
+            </View>
+          </View>
+        </>
       )}
       {focusComplete === true && (
         <>
@@ -173,23 +187,33 @@ const LoginScreen = ({navigation}) => {
               </Pressable>
             </>
           )}
-          {loginStatus === 2 && (
+          {/* {loginStatus === 2 && (
             <>
-              <Text className="mt-10">Please wait!</Text>
-              <Pressable className="bg-flat_blue1 px-4 py-3 rounded mt-5 flex-row space-x-2">
-                <ActivityIndicator
-                  size="small"
-                  color={color_theme.flat_white1}
-                />
-                <Text className="text-white">Signing in</Text>
-              </Pressable>
+              <View className="mt-5">
+                {eventMessages.map((item, i) => {
+                  return (
+                    <View
+                      key={i}
+                      className="flex-row gap-x-2 justify-center items-center">
+                      <CheckCircleIcon
+                        color="black"
+                        fill={color_theme.flat_green1}
+                        size={35}
+                      />
+                      <Text>{item}</Text>
+                    </View>
+                  );
+                })}
+                <View className="flex-row gap-x-2 justify-center items-center">
+                  <ActivityIndicator
+                    size="small"
+                    color={color_theme.flat_midnight1}
+                  />
+                  <Text>Please Wait...</Text>
+                </View>
+              </View>
             </>
-          )}
-          {/* <>
-        <Pressable onPress={() => console.log(currentUser)} className="bg-flat_blue1 px-4 py-3 rounded mt-5 flex-row space-x-2">
-          <Text className="text-white">See State</Text>
-        </Pressable>
-      </> */}
+          )} */}
         </>
       )}
     </View>

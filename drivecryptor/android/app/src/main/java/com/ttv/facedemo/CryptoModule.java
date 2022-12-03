@@ -1,5 +1,7 @@
 package com.ttv.facedemo;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -11,8 +13,11 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableNativeArray;
 
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.KeySpec;
 import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
@@ -21,6 +26,8 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class CryptoModule extends ReactContextBaseJavaModule {
@@ -73,27 +80,27 @@ public class CryptoModule extends ReactContextBaseJavaModule {
      * @param data The data to encrypt
      * @param key The encryption key to use
      */
-    @ReactMethod
-    public void encrypt(ReadableArray data, ReadableArray key, Promise promise) {
-        final byte[] plaintext = toByteArray(data);
-        final SecretKey secretKey = toSecretKey(toByteArray(key));
-
-        // Encrypt `plaintext` into `ciphertext`.
-        byte[] ciphertext = null;
-        try {
-            ciphertext = aesEncrypt(plaintext, secretKey);
-        } catch (IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException e) {
-            promise.reject(e);
-        } catch (InvalidKeyException e) {
-            promise.reject("Invalid encryption key", e);
-        }
-
-        if (ciphertext == null) {
-            promise.reject("Encryption failed", "No ciphertext was obtained.");
-            return;
-        }
-        promise.resolve(toWritableArray(ciphertext));
-    }
+//    @ReactMethod
+//    public void encrypt(ReadableArray data, ReadableArray key, Promise promise) {
+//        final byte[] plaintext = toByteArray(data);
+//        final SecretKey secretKey = toSecretKey(toByteArray(key));
+//
+//        // Encrypt `plaintext` into `ciphertext`.
+//        byte[] ciphertext = null;
+//        try {
+//            ciphertext = aesEncrypt(plaintext, secretKey);
+//        } catch (IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException e) {
+//            promise.reject(e);
+//        } catch (InvalidKeyException e) {
+//            promise.reject("Invalid encryption key", e);
+//        }
+//
+//        if (ciphertext == null) {
+//            promise.reject("Encryption failed", "No ciphertext was obtained.");
+//            return;
+//        }
+//        promise.resolve(toWritableArray(ciphertext));
+//    }
 
     /**
      * Encrypts the data encoded in Base64 by the given string using the AES encryption algorithm
@@ -123,32 +130,56 @@ public class CryptoModule extends ReactContextBaseJavaModule {
         promise.resolve(toBase64String(ciphertext));
     }
 
+    @ReactMethod
+    public void encryptText(String text, String key, Promise promise) {
+        byte[] ciphertext = null;
+        try {
+
+            SecretKey secretKey = toSecretKey(key.getBytes());
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            ciphertext = cipher.doFinal(text.getBytes(StandardCharsets.UTF_8));
+        } catch (IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException e) {
+            promise.reject(e);
+        } catch (InvalidKeyException e) {
+            promise.reject("Invalid encryption key", e);
+        }
+
+        if (ciphertext == null) {
+            promise.reject("Encryption failed", "No ciphertext was obtained.");
+            return;
+        }
+
+        String result = new String(ciphertext, StandardCharsets.UTF_8);
+        promise.resolve(result);
+    }
+
     /**
      * Decrypts the given AES-encrypted ciphertext and returns the resulting plaintext.
      * @param encryptedData The ciphertext to be decrypted
      * @param key The decryption key to use
      */
-    @ReactMethod
-    public void decrypt(ReadableArray encryptedData, ReadableArray key, Promise promise) {
-        final byte[] ciphertext = toByteArray(encryptedData);
-        final SecretKey secretKey = toSecretKey(toByteArray(key));
-
-        // Decrypt `ciphertext` into `plaintext`.
-        byte[] plaintext = null;
-        try {
-            plaintext = aesDecrypt(ciphertext, secretKey);
-        } catch (IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException e) {
-            promise.reject(e);
-        } catch (InvalidKeyException e) {
-            promise.reject("Invalid decryption key", e);
-        }
-
-        if (plaintext == null) {
-            promise.reject("Decryption failed", "No plaintext was obtained.");
-            return;
-        }
-        promise.resolve(toWritableArray(plaintext));
-    }
+//    @ReactMethod
+//    public void decrypt(ReadableArray encryptedData, ReadableArray key, Promise promise) {
+//        final byte[] ciphertext = toByteArray(encryptedData);
+//        final SecretKey secretKey = toSecretKey(toByteArray(key));
+//
+//        // Decrypt `ciphertext` into `plaintext`.
+//        byte[] plaintext = null;
+//        try {
+//            plaintext = aesDecrypt(ciphertext, secretKey);
+//        } catch (IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException e) {
+//            promise.reject(e);
+//        } catch (InvalidKeyException e) {
+//            promise.reject("Invalid decryption key", e);
+//        }
+//
+//        if (plaintext == null) {
+//            promise.reject("Decryption failed", "No plaintext was obtained.");
+//            return;
+//        }
+//        promise.resolve(toWritableArray(plaintext));
+//    }
 
     /**
      * Decrypts the AES-encrypted ciphertext represented in Base64 by the given string and returns
@@ -186,6 +217,9 @@ public class CryptoModule extends ReactContextBaseJavaModule {
      */
     @NonNull
     private byte[] toByteArray(String base64String) {
+        Log.d("Arian", base64String);
+//        byte[] name = Base64.getEncoder().encode(base64String.getBytes());
+//        byte[] decodedString = Base64.decodeBase64(new String(name).getBytes("UTF-8"));
         return Base64.getDecoder().decode(base64String);
     }
 
@@ -205,7 +239,7 @@ public class CryptoModule extends ReactContextBaseJavaModule {
      * @return The {@link SecretKey} constructed from the byte array
      */
     @NonNull
-    private SecretKey toSecretKey(@NonNull byte[] keyData) {
+    private SecretKey toSecretKey(@NonNull byte[] keyData){
         return new SecretKeySpec(keyData, 0, keyData.length, KEYGEN_ALGORITHM);
     }
 

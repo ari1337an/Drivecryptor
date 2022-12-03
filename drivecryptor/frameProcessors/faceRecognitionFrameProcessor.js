@@ -1,4 +1,4 @@
-export function faceRecognition(frame, params){
+export function faceRecognition(frame){
   'worklet'
-  return __faceRecognition(frame, params);
+  return __faceRecognition(frame, "");
 }

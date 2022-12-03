@@ -51,16 +51,35 @@ const FileListCard = ({
         // Handle Folder Press
         // Navigate to that folder
         if (redirectScreen === 'BrowseDirectoryScreen') {
-          navigation.push(redirectScreen, {
-            folderID: data.id,
-            selectedFileInfo: selectedFileToUpload,
-            folderName: data.name,
-          });
+          // console.log("ran this");
+          navigation.push('FaceVerificationNavigationInterrupt', {
+            screenName: redirectScreen,
+            parameters: {
+              folderID: data.id,
+              selectedFileInfo: selectedFileToUpload,
+              folderName: data.name,
+            }
+          })
+
+          // navigation.push(redirectScreen, {
+          //   folderID: data.id,
+          //   selectedFileInfo: selectedFileToUpload,
+          //   folderName: data.name,
+          // });
         } else if (redirectScreen === 'MyFilesScreen') {
-          navigation.push(redirectScreen, {
-            folderID: data.id,
-            folderName: data.name,
-          });
+
+          navigation.push('FaceVerificationNavigationInterrupt', {
+            screenName: redirectScreen,
+            parameters: {
+              folderID: data.id,
+              folderName: data.name,
+            }
+          })
+
+          // navigation.push(redirectScreen, {
+          //   folderID: data.id,
+          //   folderName: data.name,
+          // });
         }
       } else if (mimeTypeData.isSupportedForPreview(data.mimeType)) {
         // Request Permission

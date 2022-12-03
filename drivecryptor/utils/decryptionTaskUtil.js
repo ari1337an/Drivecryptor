@@ -178,6 +178,8 @@ const initiateBackgroundDecryptionTask = async (
     let taskID = taskIDx;
     if (taskID == null) taskID = uuidv4();
 
+    taskID = "PREVIEW_"+taskID;
+
     // Push this into queue
     let newDetails = {...fileDetails, status: 'processing'};
     await AsyncStorage.setItem(taskID, JSON.stringify(newDetails));

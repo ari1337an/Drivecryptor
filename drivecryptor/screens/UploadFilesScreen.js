@@ -1,6 +1,6 @@
 // Core 
-import {View, Text, Pressable, Alert, ActivityIndicator} from 'react-native';
-import React, {useState, useEffect} from 'react';
+import {View, Text, Pressable, Alert, ActivityIndicator, BackHandler} from 'react-native';
+import React, {useState, useEffect, useCallback} from 'react';
 
 // Styles, Themes, Icons
 import color_theme from '../color-theme';
@@ -18,12 +18,34 @@ import DocumentPicker, {types} from 'react-native-document-picker';
 
 // Utils
 import GoogleDriveUtil from '../utils/GoogleDriveUtil';
+import encryptionTaskUtil from '../utils/encryptionTaskUtil';
+
+import { useFocusEffect } from '@react-navigation/native';
 
 const UploadFilesScreen = ({route, navigation}) => {
   const [uploading, setUploading] = useState(false);
   const [filePickResult, setFilePickResult] = useState(null);
   const [directoryID, setDirectoryID] = useState('root'); // initially to root folder
   const [directoryName, setDirectoryName] = useState('/'); // initially to root folder
+
+  // Double Backpress
+  const [pressedBackBtn, setPressedBackBtn] = useState(false);
+  useEffect(() => {
+    if(pressedBackBtn === true){
+      navigation.pop(2);
+      setPressedBackBtn(false);
+    }
+  },[pressedBackBtn]);
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        setPressedBackBtn(true);
+        return true;
+      };
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [])
+  );
 
   // onFocus of current screen
   useEffect(() => {
@@ -51,11 +73,21 @@ const UploadFilesScreen = ({route, navigation}) => {
   const handleBrowseDirectory = async () => {
     try {
       // send to myfiles screen to pick
-      navigation.push('BrowseDirectoryScreen', {
-        folderID: 'root',
-        selectedFileInfo: filePickResult,
-        folderName: '/',
-      });
+
+      navigation.push('FaceVerificationNavigationInterrupt', {
+        screenName: 'BrowseDirectoryScreen',
+        parameters: {
+          folderID: 'root',
+          selectedFileInfo: filePickResult,
+          folderName: '/',
+        }
+      })
+      
+      // navigation.push('BrowseDirectoryScreen', {
+      //   folderID: 'root',
+      //   selectedFileInfo: filePickResult,
+      //   folderName: '/',
+      // });
     } catch (error) {
       console.log(error);
     }
@@ -64,19 +96,17 @@ const UploadFilesScreen = ({route, navigation}) => {
   const executeUpload = async () => {
     setUploading(true);
     try {
-      // Setup the GDrive instance
-      const gdrive = await GoogleDriveUtil.getInstance();
-
+      const fileDetails = {
+        fileName: filePickResult.name,
+        fileType: filePickResult.type,
+        fileUri: filePickResult.uri
+      }
+      // console.log("from upload screen");
+      // console.log(fileDetails);
       // Upload File
-      await GoogleDriveUtil.fileUpload(
-        gdrive,
-        filePickResult.name,
-        filePickResult.type,
-        filePickResult.uri,
-        directoryID,
-      );
+      encryptionTaskUtil.initiateEncryptionTask(fileDetails,directoryID,navigation,null);
 
-      Alert.alert('Success', 'Successfully Uploaded!');
+      Alert.alert('Uploading...', 'Your file is being uploaded!');
       navigation.push("DashboardScreen");
       setUploading(false);
     } catch (error) {

@@ -1,6 +1,6 @@
-// Core 
-import {View, Text, FlatList, Alert} from 'react-native';
-import React, {useEffect, useState} from 'react';
+// Core
+import {View, Text, FlatList, Alert, BackHandler} from 'react-native';
+import React, {useCallback, useEffect, useState} from 'react';
 
 // Configs
 import Config from '../config';
@@ -17,6 +17,7 @@ import FileListCard from '../components/FileListCard';
 
 // Icons
 import {CheckIcon} from 'react-native-heroicons/solid';
+import { useFocusEffect } from '@react-navigation/native';
 
 const BrowseDirectoryScreen = ({route, navigation}) => {
   const [fileList, setFileList] = useState([]);
@@ -24,6 +25,28 @@ const BrowseDirectoryScreen = ({route, navigation}) => {
   const [currentFolderID, setCurrentFolderID] = useState('root');
   const [currentFolderName, setCurrentFolderName] = useState('/');
   const [selectedFileToUpload, setSelectedFileToUpload] = useState(null);
+
+  // Double Backpress
+  const [pressedBackBtn, setPressedBackBtn] = useState(false);
+  useEffect(() => {
+    if (pressedBackBtn === true) {
+      navigation.pop(2);
+      setPressedBackBtn(false);
+    }
+  }, [pressedBackBtn]);
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        setPressedBackBtn(true);
+        return true;
+      };
+      const subscription = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => subscription.remove();
+    }, []),
+  );
 
   const getListOfDriveFiles = async (folderID = currentFolderID) => {
     setRefreshing(true);

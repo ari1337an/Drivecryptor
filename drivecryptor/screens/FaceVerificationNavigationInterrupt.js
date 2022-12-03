@@ -25,64 +25,38 @@ import ReactNativeBlobUtil from 'react-native-blob-util';
 // File Viewer
 import FileViewer from 'react-native-file-viewer';
 
-import GoogleDriveUtil from '../utils/GoogleDriveUtil'
+import GoogleDriveUtil from '../utils/GoogleDriveUtil';
 
 const path = RNFS.CachesDirectoryPath;
 
 const FaceRecognitionScreen = ({navigation, route}) => {
-  const [loadedRef, setLoadedRef] = useState(false);
-  const [refPicPath, setRefPicPath] = useState("");
+  const [loadedRef, setLoadedRef] = useState(true);
+  const [refPicPath, setRefPicPath] = useState('');
   const [loading, setLoading] = useState(true);
   const [curStat, setCurStat] = useState('Processing...');
   const [currentPermission, setCurrentPermission] = useState(null);
+  const [verified, setVerified] = useState(false);
   const devices = useCameraDevices();
   const device = devices.front;
   const camera = useRef(null);
 
-  const loadRefPic = async () => {
-    // Setup the GDrive instance
-    const gdrive = await GoogleDriveUtil.getInstance();
-    let base64pic = await GoogleDriveUtil.getRefPicBase64(gdrive);
-    await ReactNativeBlobUtil.fs.writeFile(path+"/refPic.png",base64pic,'base64');
-    setLoadedRef(true);
-    setRefPicPath("file://"+path+"/refPic.png");
-  };
-
-  // onFocus
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', async () => {
-      await loadRefPic();
-    });
-    return unsubscribe;
-  }, [navigation]);
-
-  const fullFilled = (result) => {
-    const {screenName, parameters} = route.params;
-    navigation.push(screenName, parameters);
-  };
-
-  const notFullFilled = (result) => {
-    console.log(result);
-  };
+    if(curStat === "VERIFIED"){
+      const {screenName, parameters} = route.params;
+      navigation.push(screenName, parameters);
+    }
+  },[curStat]);
 
   const frameProcessor = useFrameProcessor(frame => {
     'worklet';
-    const result = faceRecognition(frame, "file://"+refPicPath);
+    const result = faceRecognition(frame);
     runOnJS(setCurStat)(result);
-    if (result === 'VERIFIED') runOnJS(fullFilled)(result);
-    else runOnJS(notFullFilled)(result);
   }, []);
 
   const askForPermission = async () => {
     try {
       const status1 = await Camera.requestCameraPermission();
-      const status2 = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-      );
-      if (
-        status1 === 'authorized' &&
-        status2 === PermissionsAndroid.RESULTS.GRANTED
-      ) {
+      if (status1 === 'authorized') {
         setCurrentPermission('authorized');
       } else {
         throw new Error('');
@@ -142,7 +116,7 @@ const FaceRecognitionScreen = ({navigation, route}) => {
           isActive={true}
           ref={camera}
           frameProcessor={frameProcessor}
-          frameProcessorFps={0.3} // Change this later
+          frameProcessorFps={1} // Change this later
           preset="cif-352x288"
         />
         {renderOverlay()}

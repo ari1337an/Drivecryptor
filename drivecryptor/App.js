@@ -19,6 +19,7 @@ import FaceVerificationNavigationInterrupt from './screens/FaceVerificationNavig
 import CurRefPic from './screens/CurRefPic';
 import ImageViewScreen from './screens/ImageViewScreen';
 import PDFViewScreen from './screens/PDFViewScreen';
+import UploadingTasks from './screens/UploadingTasks';
 
 // Notification Handler
 import notifee from '@notifee/react-native';
@@ -46,6 +47,7 @@ function App() {
         screenOptions={{headerShown: false}}>
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
         <Stack.Screen name="QueueTask" component={QueueTask} />
+        <Stack.Screen name="UploadingTasks" component={UploadingTasks} />
         <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
         <Stack.Screen name="CameraScreen" component={CameraScreen} />
         <Stack.Screen

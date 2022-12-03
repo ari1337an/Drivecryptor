@@ -10,11 +10,16 @@ import {
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import 'react-native-get-random-values';
 import cryptoJs from 'crypto-js';
-import LoginUtils from "./LoginUtils"
+import LoginUtils from './LoginUtils';
 import base64Encoder from '../utils/base64Encoder';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 
 // File System
 import RNFS from 'react-native-fs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {DeviceEventEmitter} from 'react-native';
+
+const path = RNFS.CachesDirectoryPath;
 
 const logData = message => {
   // console.log(message);
@@ -84,44 +89,54 @@ const getFileListInAppData = async instance => {
   return filesList;
 };
 
-const getConfigFileObject = async instance => {
-  let allFileInAppData = await getFileListInAppData(instance);
-  for (const file of allFileInAppData) {
-    if (file.mimeType === MimeTypes.JSON && file.name === 'config') {
-      let configJsonObj = await instance.files.getJson(file.id);
-      return configJsonObj;
-    }
+const checkIfConfigFileIDIsCached = async () => {
+  const configFileID = await AsyncStorage.getItem('ConfigFileID');
+  if (configFileID != null) {
+    return true;
+  } else {
+    return false;
   }
-  // File Do not exists, so lets create one and ten send the config file
-  await createConfigFileIfNotExists(instance);
-  return await getConfigFileObject(instance);
+};
+
+const getConfigFileID = async instance => {
+  const status = await checkIfConfigFileIDIsCached();
+  if (status === true) {
+    // console.log("using cached ");
+    return await AsyncStorage.getItem('ConfigFileID');
+  } else {
+    let allFileInAppData = await getFileListInAppData(instance);
+    for (const file of allFileInAppData) {
+      if (file.mimeType === MimeTypes.JSON && file.name === 'config') {
+        // console.log("using non cached ");
+        await AsyncStorage.setItem('ConfigFileID', file.id);
+        return file.id;
+      }
+    }
+    // File Do not exists, so lets create one and ten send the config file
+    await createConfigFileIfNotExists(instance);
+    return await getConfigFileID(instance);
+  }
+};
+
+const getConfigFileObject = async instance => {
+  const configFileID = await getConfigFileID(instance);
+  let configJsonObj = await instance.files.getJson(configFileID);
+  return configJsonObj;
 };
 
 const getConfigFileFileID = async instance => {
-  let allFileInAppData = await getFileListInAppData(instance);
-  for (const file of allFileInAppData) {
-    if (file.mimeType === MimeTypes.JSON && file.name === 'config') {
-      return file.id;
-    }
-  }
-  // File Do not exists, so lets create one and ten send the config file
-  await createConfigFileIfNotExists(instance);
-  return await getConfigFileFileID(instance);
+  return getConfigFileID(instance);
 };
 
 const createConfigFileIfNotExists = async instance => {
   let allFileInAppData = await getFileListInAppData(instance);
   let found = false;
   for (const file of allFileInAppData) {
-    // console.log(file);
     if (file.mimeType === MimeTypes.JSON && file.name === 'config') {
       found = true;
-      // console.log('Found config.js, id: ', file.id);
     }
   }
   if (found === false) {
-    // console.log('Didnot found config.js in appdata, creating one now!');
-    // Create config.json file
     let id = await instance.files
       .newMultipartUploader()
       .setData('W10=', MimeTypes.JSON) // "W10=" in base64 means "[]" in text
@@ -131,7 +146,6 @@ const createConfigFileIfNotExists = async instance => {
         parents: ['appDataFolder'],
       })
       .execute();
-    // console.log('appdata config.js details: ', id.id);
   }
 };
 
@@ -140,26 +154,19 @@ const addElementInConfig = async (instance, value) => {
   configCur = [...configCur, value];
   let configCurStr = await JSON.stringify(configCur);
   let oldConfigFileID = await getConfigFileFileID(instance);
-
-  // Update the config.json
   let id = await instance.files
     .newMultipartUploader()
     .setData(configCurStr, MimeTypes.JSON) // "W10=" in base64 means "[]" in text
     .setIdOfFileToUpdate(oldConfigFileID)
     .execute();
-
-  // // Delete Old One
-  // await instance.delete(oldConfigFileID)
 };
 
 const RefPicExists = async instance => {
   let allFileInAppData = await getFileListInAppData(instance);
   let found = false;
   for (const file of allFileInAppData) {
-    // console.log(file);
     if (file.mimeType === 'image/jpeg' && file.name === 'refPic') {
       found = true;
-      // console.log('Found refPic, id: ', file.id);
     }
   }
   return found;
@@ -168,7 +175,6 @@ const RefPicExists = async instance => {
 const getRefPicFileID = async instance => {
   let allFileInAppData = await getFileListInAppData(instance);
   for (const file of allFileInAppData) {
-    // console.log(file);
     if (file.mimeType === 'image/jpeg' && file.name === 'refPic') {
       return file.id;
     }
@@ -179,20 +185,16 @@ const getRefPicBase64 = async instance => {
   let allFileInAppData = await getFileListInAppData(instance);
   for (const file of allFileInAppData) {
     if (file.mimeType === 'image/jpeg' && file.name === 'refPic') {
-      console.log("found it");
       let fileContent = await instance.files.getBinary(file.id);
       let base64Conent = await base64Encoder(fileContent);
-      console.log("sent it");
       return base64Conent;
     }
   }
-}
+};
 
 const uploadRefPicToAppDataFolder = async (instance, filePath) => {
   if (RefPicExists(instance) === true) {
-    // console.log('Found a refPic, not updating the old file!');
   } else {
-    // console.log("Couldn't find old refPic, so, uploading new one.");
     let fileContent = await RNFS.readFile(filePath, 'base64');
     let details = await instance.files
       .newMultipartUploader()
@@ -203,17 +205,47 @@ const uploadRefPicToAppDataFolder = async (instance, filePath) => {
         parents: ['appDataFolder'],
       })
       .execute();
-    // console.log('refPic upload done, file id', details.id);
   }
+};
+
+const loadAppData = async instance => {
+  function wait(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
+  }
+
+  // Create config.json in appdata space If Not Already Created
+  await createConfigFileIfNotExists(instance);
+  DeviceEventEmitter.emit('LoginScreenEvents', 'Configurations Synced!');
+
+  // Check if refPic Exists
+  const refPicExists = await RefPicExists(instance);
+
+  // Cache The Photo Locally
+  if (refPicExists === true) {
+    let base64pic = await getRefPicBase64(instance);
+    DeviceEventEmitter.emit('LoginScreenEvents', 'Reference Picture Synced!');
+
+    await ReactNativeBlobUtil.fs.writeFile(
+      path + '/refPic.png',
+      base64pic,
+      'base64',
+    );
+  }
+  DeviceEventEmitter.emit('LoginScreenEvents', 'Reference Picture Cached!');
+
+  // await wait(5000);
+
+  // Return If RefPicExists or Not
+  return refPicExists;
 };
 
 const resetAppData = async (navigation = null) => {
   try {
-    let instance = await getInstance()
+    let instance = await getInstance();
     let allFileInAppData = await getFileListInAppData(instance);
     for (const file of allFileInAppData) {
       if (file.mimeType === 'image/jpeg' && file.name === 'refPic') {
-        await instance.files.delete(file.id)
+        await instance.files.delete(file.id);
       }
     }
     await LoginUtils.Signout(navigation);
@@ -235,7 +267,8 @@ const exports = {
   RefPicExists,
   getRefPicFileID,
   resetAppData,
-  getRefPicBase64
+  getRefPicBase64,
+  loadAppData,
 };
 
 export default exports;
