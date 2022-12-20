@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
                 when (resultState) {
                     is EvaluationResultState.Success -> {
                         resultState.data.run {
-                            binding.textView.text = """
+                            binding.results.text = """
                                 RESULTS:
                                 Confusion matrix: $confusionMatrix
                                 Precisions: $precisions
@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         binding.startButton.isEnabled = false
                     }
-                    is EvaluationResultState.Loading -> binding.textView.text = "${resultState.message ?: "Loading..."}"
+                    is EvaluationResultState.Loading -> binding.results.text = "${resultState.message ?: "Loading..."}"
                 }
             }
 

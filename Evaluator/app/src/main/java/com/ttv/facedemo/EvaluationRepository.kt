@@ -20,11 +20,6 @@ data class PerformanceMetrics(
     val accuracy: Double,
 )
 
-//sealed class Result<out R> {
-//    data class Error(val messages: List<String>): Result<Nothing>()
-//    data class Success<T>(val data: T): Result<T>()
-//}
-
 class EvaluationRepository(context: Context) {
     private val faceEngine: FaceEngine
     private val photoDirectories: Array<File>
@@ -128,23 +123,25 @@ class EvaluationRepository(context: Context) {
     }
 
     private fun getPerformanceMetrics(confusionMatrix: List<List<Int>>): PerformanceMetrics {
-        val predictedPositives = confusionMatrix.map { row -> row.sum() }
-        val precisions = predictedPositives.mapIndexed { i, sum -> confusionMatrix[i][i] / sum.toDouble() }
+        fun timesCorrectlyPredicted(personId: Int) = confusionMatrix[personId][personId]
 
-        val actualPositives = MutableList(size = confusionMatrix.size) { 0 }
+        val predictionCounts = confusionMatrix.map { row -> row.sum() }
+        val precisions = predictionCounts
+            .mapIndexed { i, timesPredicted -> timesCorrectlyPredicted(i) / timesPredicted.toDouble() }
+
+        val occurrenceCounts = MutableList(size = confusionMatrix.size) { 0 }
         for (row in confusionMatrix.indices)
             for (col in confusionMatrix.indices)
-                actualPositives[col] += confusionMatrix[row][col]
-        val recalls = actualPositives.mapIndexed { i, sum -> confusionMatrix[i][i] / sum.toDouble() }
+                occurrenceCounts[col] += confusionMatrix[row][col]
+        val recalls = occurrenceCounts.mapIndexed { i, sum -> timesCorrectlyPredicted(i) / sum.toDouble() }
 
-        val totalFalsePositives = predictedPositives
-            .mapIndexed { i, sum -> sum - confusionMatrix[i][i] }
+        val totalFalsePositives = predictionCounts
+            .mapIndexed { i, timesPredicted -> timesPredicted - timesCorrectlyPredicted(i) }
             .sum()
-        val totalFalseNegatives = actualPositives
-            .mapIndexed { i, sum -> sum - confusionMatrix[i][i] }
+        val totalFalseNegatives = occurrenceCounts
+            .mapIndexed { i, count -> count - timesCorrectlyPredicted(i) }
             .sum()
-        val totalTruePositives = List(size = confusionMatrix.size) { i -> confusionMatrix[i][i] }
-            .sum()
+        val totalTruePositives = List(size = confusionMatrix.size) { i -> timesCorrectlyPredicted(i) }.sum()
         val microF1 = totalTruePositives / (totalTruePositives + 0.5 * (totalFalsePositives + totalFalseNegatives))
 
         val macroF1 = (precisions zip recalls)
@@ -152,7 +149,7 @@ class EvaluationRepository(context: Context) {
                 2 * precision * recall / (precision + recall)
             }
 
-        val totalTests = predictedPositives.sum()
+        val totalTests = predictionCounts.sum()
         val accuracy = totalTruePositives / totalTests.toDouble()
 
         return PerformanceMetrics(
