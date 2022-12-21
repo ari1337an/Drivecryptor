@@ -53,7 +53,9 @@ class EvaluationRepository(context: Context) {
             }
             .forEachIndexed { index, file ->
                 try {
-                    registerFace(personId = index, faceBitmap = BitmapFactory.decodeFile(file.path))
+                    val faceBitmapx: Bitmap = BitmapFactory.decodeFile(file.path)
+                    val faceBitmapy = Bitmap.createScaledBitmap(faceBitmapx, 1000, 1000, false);
+                    registerFace(personId = index, faceBitmap = faceBitmapy)
                 } catch (e: Exception) {
                     accumulatedErrors += e.message!!
                 }
@@ -98,7 +100,8 @@ class EvaluationRepository(context: Context) {
     }
 
     private fun recognizeFaceInPhoto(file: File): Int {
-        val faceBitmap: Bitmap = BitmapFactory.decodeFile(file.path)
+        val faceBitmapx: Bitmap = BitmapFactory.decodeFile(file.path)
+        val faceBitmap = Bitmap.createScaledBitmap(faceBitmapx, 1000, 1000, false);
         val recognitionResults: MutableList<FaceResult> = faceEngine.detectFace(faceBitmap)
 
         when (recognitionResults.count()) {
@@ -107,17 +110,17 @@ class EvaluationRepository(context: Context) {
             else -> throw Exception("File ${file.path} matches multiple registered faces: ${recognitionResults.map { it.faceId }}")
         }
 
-        // TODO: Should we check for liveness?
-        faceEngine.livenessProcess(faceBitmap, recognitionResults) // run spoof check
-        if (recognitionResults[0].liveness != 1)
-            throw Exception("File ${file.path} failed the liveness check")
+//        // TODO: Should we check for liveness?
+//        faceEngine.livenessProcess(faceBitmap, recognitionResults) // run spoof check
+//        if (recognitionResults[0].liveness != 1)
+//            throw Exception("File ${file.path} failed the liveness check")
 
         faceEngine.extractFeature(faceBitmap, false, recognitionResults)
         val result: SearchResult = faceEngine.searchFaceFeature(FaceFeature(recognitionResults[0].feature))
 
         // TODO: Should we require a similarity threshold?
-        // if (result.maxSimilar <= 0.82f)
-        //     throw Exception("Not similar enough: file ${file.path}")
+//         if (result.maxSimilar <= 0.82f)
+//             throw Exception("Not similar enough: file ${file.path}")
 
         return result.faceFeatureInfo?.searchId ?: throw Exception("API returned null for the recognized user's ID in file ${file.path}")
     }
