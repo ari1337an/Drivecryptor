@@ -23,6 +23,7 @@ data class PerformanceMetrics(
 class EvaluationRepository(context: Context) {
     private val faceEngine: FaceEngine
     private val photoDirectories: Array<File>
+    private val accumulatedErrors = mutableListOf<String>()
 
     init {
         faceEngine = FaceEngine.getInstance(context)
@@ -37,27 +38,23 @@ class EvaluationRepository(context: Context) {
     }
 
     suspend fun evaluatePerformance(): Pair<PerformanceMetrics, List<String>> = withContext(Dispatchers.Default) {
-        val errors = mutableListOf<String>()
-
-        registerAllReferenceFaces(errors)
-        val confusionMatrix = recognizeFacesAndGenerateConfusionMatrix(errors)
+        registerAllReferenceFaces()
+        val confusionMatrix = recognizeFacesAndGenerateConfusionMatrix()
         val performanceMetrics = getPerformanceMetrics(confusionMatrix)
 
-        Pair(performanceMetrics, errors)
+        Pair(performanceMetrics, accumulatedErrors)
     }
 
-    private fun registerAllReferenceFaces(accumulatedErrors: MutableList<String>) {
+    private fun registerAllReferenceFaces() {
         photoDirectories
             .map { dir ->
                 dir.listFiles { file -> file.isFile && file.name.startsWith(REFERENCE_PREFIX) }!!.first()
             }
             .forEachIndexed { index, file ->
                 try {
-                    val faceBitmapx: Bitmap = BitmapFactory.decodeFile(file.path)
-                    val faceBitmapy = Bitmap.createScaledBitmap(faceBitmapx, 1000, 1000, false);
-                    registerFace(personId = index, faceBitmap = faceBitmapy)
+                    registerFace(personId = index, faceBitmap = getScaledBitmap(file))
                 } catch (e: Exception) {
-                    accumulatedErrors += e.message!!
+                    accumulateError(e)
                 }
             }
     }
@@ -70,14 +67,14 @@ class EvaluationRepository(context: Context) {
         faceEngine.registerFaceFeature(FaceFeatureInfo(personId, results[0].feature))
     }
 
-    private fun recognizeFacesAndGenerateConfusionMatrix(accumulatedErrors: MutableList<String>): List<List<Int>> {
+    private fun recognizeFacesAndGenerateConfusionMatrix(): List<List<Int>> {
         val confusionMatrix: List<MutableList<Int>> =
             List(size = photoDirectories.size) {
                 MutableList(size = photoDirectories.size) { 0 }
             }
 
-        fun updateConfusionMatrix(actualPerson: Int, recognizedPerson: Int?) {
-            recognizedPerson ?: throw Exception("Recognized person is null")
+        fun updateConfusionMatrix(actualPerson: Int, recognizedPerson: Int?, filePath: String) {
+            recognizedPerson ?: throw Exception("Person recognized from file `$filePath` is null")
             confusionMatrix[actualPerson][recognizedPerson]++
         }
 
@@ -89,9 +86,9 @@ class EvaluationRepository(context: Context) {
                 files.forEach { file ->
                     try {
                         val guess = recognizeFaceInPhoto(file)
-                        updateConfusionMatrix(actualPerson = index, recognizedPerson = guess)
+                        updateConfusionMatrix(actualPerson = index, recognizedPerson = guess, filePath = file.path)
                     } catch (e: Exception) {
-                        accumulatedErrors += e.message!!
+                        accumulateError(e)
                     }
                 }
             }
@@ -100,8 +97,7 @@ class EvaluationRepository(context: Context) {
     }
 
     private fun recognizeFaceInPhoto(file: File): Int {
-        val faceBitmapx: Bitmap = BitmapFactory.decodeFile(file.path)
-        val faceBitmap = Bitmap.createScaledBitmap(faceBitmapx, 1000, 1000, false);
+        val faceBitmap = getScaledBitmap(file)
         val recognitionResults: MutableList<FaceResult> = faceEngine.detectFace(faceBitmap)
 
         when (recognitionResults.count()) {
@@ -110,19 +106,10 @@ class EvaluationRepository(context: Context) {
             else -> throw Exception("File ${file.path} matches multiple registered faces: ${recognitionResults.map { it.faceId }}")
         }
 
-//        // TODO: Should we check for liveness?
-//        faceEngine.livenessProcess(faceBitmap, recognitionResults) // run spoof check
-//        if (recognitionResults[0].liveness != 1)
-//            throw Exception("File ${file.path} failed the liveness check")
-
         faceEngine.extractFeature(faceBitmap, false, recognitionResults)
         val result: SearchResult = faceEngine.searchFaceFeature(FaceFeature(recognitionResults[0].feature))
-
-        // TODO: Should we require a similarity threshold?
-//         if (result.maxSimilar <= 0.82f)
-//             throw Exception("Not similar enough: file ${file.path}")
-
-        return result.faceFeatureInfo?.searchId ?: throw Exception("API returned null for the recognized user's ID in file ${file.path}")
+        return result.faceFeatureInfo?.searchId
+            ?: throw Exception("API returned null for the recognized user's ID in file ${file.path}")
     }
 
     private fun getPerformanceMetrics(confusionMatrix: List<List<Int>>): PerformanceMetrics {
@@ -136,7 +123,7 @@ class EvaluationRepository(context: Context) {
         for (row in confusionMatrix.indices)
             for (col in confusionMatrix.indices)
                 occurrenceCounts[col] += confusionMatrix[row][col]
-        val recalls = occurrenceCounts.mapIndexed { i, sum -> timesCorrectlyPredicted(i) / sum.toDouble() }
+        val recalls = occurrenceCounts.mapIndexed { i, count -> timesCorrectlyPredicted(i) / count.toDouble() }
 
         val totalFalsePositives = predictionCounts
             .mapIndexed { i, timesPredicted -> timesPredicted - timesCorrectlyPredicted(i) }
@@ -164,4 +151,14 @@ class EvaluationRepository(context: Context) {
             accuracy = accuracy
         )
     }
+
+    private fun accumulateError(error: Exception) {
+        accumulatedErrors += error.message!!
+    }
+
+}
+
+private fun getScaledBitmap(file: File): Bitmap {
+    val sourceBitmap: Bitmap = BitmapFactory.decodeFile(file.path)
+    return Bitmap.createScaledBitmap(sourceBitmap, 1000, 1000, false)
 }

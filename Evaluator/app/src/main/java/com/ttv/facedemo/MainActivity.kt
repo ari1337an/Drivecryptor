@@ -19,37 +19,39 @@ class MainActivity : AppCompatActivity() {
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
         viewModel = EvaluationViewModel(EvaluationRepository(this))
 
-        binding.instructions.text = """
-            INSTRUCTIONS:
-            Each of the 20 directories must have a single photo file whose name starts with `$REFERENCE_PREFIX`.
-            The directories should go here: `${File(getExternalFilesDir(null), PHOTOS_DIR_NAME).path}`
-        """.trimIndent()
+        binding.instructions.text = getString(R.string.instructions_template, File(getExternalFilesDir(null), PHOTOS_DIR_NAME).path, REFERENCE_PREFIX)
 
         binding.startButton.setOnClickListener {
             viewModel.startEvaluation()
+            binding.startButton.isEnabled = false
 
-            viewModel.resultState.observe(this) { resultState ->
-                when (resultState) {
-                    is EvaluationResultState.Success -> {
-                        resultState.data.run {
-                            binding.results.text = """
-                                RESULTS:
-                                Confusion matrix: $confusionMatrix
-                                Precisions: $precisions
-                                Recalls: $recalls
-                                Micro F1: $microF1
-                                Macro F1: $macroF1
-                                Accuracy: $accuracy
-                            """.trimIndent()
+            viewModel.resultsState.observe(this) {
+                binding.results.text = getString(R.string.results_template,
+                    when (it) {
+                        null -> "Results will be shown here"
+                        is EvaluationResultsState.Loading -> it.message ?: "Starting…"
+                        is EvaluationResultsState.Success -> it.data.run {
+                            getString(R.string.results_payload_template,
+                                confusionMatrix.joinToString(separator = "\n"),
+                                precisions,
+                                recalls,
+                                microF1,
+                                macroF1,
+                                accuracy
+                            )
                         }
-                        binding.startButton.isEnabled = false
                     }
-                    is EvaluationResultState.Loading -> binding.results.text = "${resultState.message ?: "Loading..."}"
-                }
+                )
             }
 
-            viewModel.errorMessagesState.observe(this) { errorMessages ->
-                binding.errors.text = "ERRORS:\n${errorMessages.map { "* $it\n" }}"
+            viewModel.errorMessagesState.observe(this) { messages ->
+                binding.errors.text = getString(R.string.errors_template,
+                    when (messages) {
+                        null -> "None so far..."
+                        emptyList<String>() -> "None :)"
+                        else -> messages.joinToString(separator = "\n") { "• $it" }
+                    }
+                )
             }
         }
     }

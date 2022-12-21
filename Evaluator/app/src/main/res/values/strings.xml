@@ -1,3 +1,26 @@
 <resources>
     <string name="app_name">Evaluator</string>
+    <string name="start_evaluation">Start evaluation</string>
+    <string name="results_payload_template"><em>Confusion matrix:</em>\n%1$s\n<em>Precisions:</em> %2$s\n<em>Recalls:</em> %3$s\n<em>F1 score – micro:</em> %4$f\n<em>F1 score – macro:</em> %5$f\n<em>Accuracy:</em> %6$f</string>
+    <string name="instructions_template">
+        <big><em>INSTRUCTIONS</em></big>
+        \nPlace the directories containing test photos in `%1$s`. Each test-case directory should contain that test
+        case\'s photos, of which exactly one should be the reference photo and have a filename starting with `%2$s`.\n
+    </string>
+    <string name="results_placeholder">
+        <big><em>RESULTS</em></big>
+        \nResults will be shown here.\n
+    </string>
+    <string name="results_template">
+        <big><em>RESULTS</em></big>
+        \n%1$s\n
+    </string>
+    <string name="errors_placeholder">
+        <big><em>ERRORS</em></big>
+        \nErrors will be shown here.\n
+    </string>
+    <string name="errors_template">
+        <big><em>ERRORS</em></big>
+        \n%1$s\n
+    </string>
 </resources>
