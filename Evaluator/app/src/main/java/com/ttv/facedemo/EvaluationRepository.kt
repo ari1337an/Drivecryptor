@@ -150,7 +150,7 @@ class EvaluationRepository(context: Context) {
         val macroF1 = (precisions zip recalls)
             .sumOf { (precision, recall) ->
                 2 * precision * recall / (precision + recall)
-            }
+            } / confusionMatrix.size
 
         val totalTests = predictionCounts.sum()
         val accuracy = totalTruePositives / totalTests.toDouble()
