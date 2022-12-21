@@ -20,6 +20,9 @@ class EvaluationViewModel(private val repository: EvaluationRepository) : ViewMo
     private val _errorMessagesState = MutableLiveData<List<String>>(null)
     val errorMessagesState: LiveData<List<String>> get() = _errorMessagesState
 
+    private val _dataSavedState = MutableLiveData<Boolean>(null)
+    val dataSavedState: LiveData<Boolean> get() = _dataSavedState
+
     fun startEvaluation() {
         _resultsState.value = EvaluationResultsState.Loading("Evaluating...")
 
@@ -27,6 +30,12 @@ class EvaluationViewModel(private val repository: EvaluationRepository) : ViewMo
             val (performanceMetrics, errorMessages) = repository.evaluatePerformance()
             _resultsState.value = EvaluationResultsState.Success(performanceMetrics)
             _errorMessagesState.value = errorMessages
+        }
+    }
+
+    fun saveData() {
+        viewModelScope.launch {
+            _dataSavedState.value = repository.writeDataToFile()
         }
     }
 }

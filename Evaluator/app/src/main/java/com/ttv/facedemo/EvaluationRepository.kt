@@ -3,6 +3,7 @@ package com.ttv.facedemo
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import com.ttv.face.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -20,13 +21,13 @@ data class PerformanceMetrics(
     val accuracy: Double,
 )
 
-class EvaluationRepository(context: Context) {
-    private val faceEngine: FaceEngine
+class EvaluationRepository(private val context: Context) {
+    private val faceEngine: FaceEngine = FaceEngine.getInstance(context)
     private val photoDirectories: Array<File>
     private val accumulatedErrors = mutableListOf<String>()
+    private lateinit var performanceMetrics: PerformanceMetrics
 
     init {
-        faceEngine = FaceEngine.getInstance(context)
         faceEngine.setActivation("")
         faceEngine.init(1)
 
@@ -40,7 +41,7 @@ class EvaluationRepository(context: Context) {
     suspend fun evaluatePerformance(): Pair<PerformanceMetrics, List<String>> = withContext(Dispatchers.Default) {
         registerAllReferenceFaces()
         val confusionMatrix = recognizeFacesAndGenerateConfusionMatrix()
-        val performanceMetrics = getPerformanceMetrics(confusionMatrix)
+        performanceMetrics = getPerformanceMetrics(confusionMatrix)
 
         Pair(performanceMetrics, accumulatedErrors)
     }
@@ -156,6 +157,38 @@ class EvaluationRepository(context: Context) {
         accumulatedErrors += error.message!!
     }
 
+    suspend fun writeDataToFile(): Boolean = withContext(Dispatchers.IO) {
+        fun writeFile(filename: String, content: ByteArray) {
+            val file = File(context.getExternalFilesDir(null), filename)
+            if (file.exists()) file.delete()
+            file.createNewFile()
+            file.outputStream().use {
+                it.write(content)
+            }
+        }
+
+        try {
+            val confusionMatrixStr = performanceMetrics.confusionMatrix
+                .joinToString(separator = "\n") { row ->
+                    row.joinToString(separator = ",")
+                }
+            writeFile(CONFUSION_MATRIX_OUT_FILENAME, confusionMatrixStr.toByteArray())
+
+            val metricsStr = performanceMetrics.run {
+                "precisions\t${precisions.joinToString(separator = ",")}\n" +
+                        "recalls\t${recalls.joinToString(separator = ",")}\n" +
+                        "micro-f1\t$microF1\n" +
+                        "macro-f1\t$macroF1\n" +
+                        "accuracy\t$accuracy\n"
+            }
+            writeFile(METRICS_OUT_FILENAME, metricsStr.toByteArray())
+        } catch (e: Exception) {
+            Log.w(TAG, e)
+            return@withContext false
+        }
+
+        true
+    }
 }
 
 private fun getScaledBitmap(file: File): Bitmap {

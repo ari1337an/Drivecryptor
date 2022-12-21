@@ -23,4 +23,5 @@
         <big><em>ERRORS</em></big>
         \n%1$s\n
     </string>
+    <string name="save_to_file">Save data to file</string>
 </resources>
